@@ -25,6 +25,11 @@ export class Renderer {
     this.ctx.fillRect(x, y, width, height)
   }
 
+  drawRectWithOpacity(x: number, y: number, width: number, height: number, color: string) {
+    this.ctx.fillStyle = color
+    this.ctx.fillRect(x, y, width, height)
+  }
+
   drawCircle(x: number, y: number, radius: number, color: string) {
     this.ctx.fillStyle = color
     this.ctx.beginPath()
