@@ -58,16 +58,37 @@ export class XPCrystal {
     this.velocityY = Math.sin(angle) * speed
   }
 
-  update(deltaTime: number) {
+  update(deltaTime: number, playerX?: number, playerY?: number, attractionRadius?: number) {
     const dt = deltaTime / 1000
+    
+    // Check if player position is provided and crystal is within attraction radius
+    if (playerX !== undefined && playerY !== undefined && attractionRadius !== undefined) {
+      const dx = playerX - this.x
+      const dy = playerY - this.y
+      const distance = Math.sqrt(dx * dx + dy * dy)
+      
+      if (distance <= attractionRadius && distance > 0) {
+        // Apply strong attraction force towards player
+        const attractionForce = 300 // Attraction strength
+        const dirX = dx / distance
+        const dirY = dy / distance
+        
+        this.velocityX = dirX * attractionForce
+        this.velocityY = dirY * attractionForce
+      } else {
+        // Apply friction when not in attraction range
+        this.velocityX *= this.friction
+        this.velocityY *= this.friction
+      }
+    } else {
+      // Apply friction when no player data provided
+      this.velocityX *= this.friction
+      this.velocityY *= this.friction
+    }
     
     // Apply movement
     this.x += this.velocityX * dt
     this.y += this.velocityY * dt
-    
-    // Apply friction
-    this.velocityX *= this.friction
-    this.velocityY *= this.friction
   }
 
   render(renderer: Renderer) {

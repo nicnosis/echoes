@@ -22,6 +22,10 @@ export class Weapon {
     return this.lastFireTime >= this.cooldown
   }
 
+  getCooldownPercentage(): number {
+    return Math.min(1, this.lastFireTime / this.cooldown)
+  }
+
   fire(playerX: number, playerY: number, targetX: number, targetY: number): Projectile | null {
     if (!this.canFire()) {
       return null

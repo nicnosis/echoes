@@ -8,9 +8,10 @@ export class HUD {
 
   constructor() {}
 
-  render(renderer: Renderer, player: Player) {
+  render(renderer: Renderer, player: Player, canvasWidth?: number, canvasHeight?: number) {
     this.renderHealthBar(renderer, player)
     this.renderXPBar(renderer, player)
+    this.renderWeaponCooldowns(renderer, player, canvasWidth || 800, canvasHeight || 600)
   }
 
   private renderHealthBar(renderer: Renderer, player: Player) {
@@ -57,5 +58,47 @@ export class HUD {
       '#ffffff',
       '14px Arial'
     )
+  }
+
+  private renderWeaponCooldowns(renderer: Renderer, player: Player, canvasWidth: number, canvasHeight: number) {
+    const weaponBarWidth = 60
+    const weaponBarHeight = 6
+    const weaponSpacing = 14
+    const startX = this.margin
+    const startY = canvasHeight - (6 * weaponSpacing) - this.margin
+
+    for (let i = 0; i < 6; i++) {
+      const x = startX + 20
+      const y = startY + i * weaponSpacing
+      const weapon = player.weapons[i]
+      
+      // Draw weapon label
+      renderer.drawText(
+        `w${i + 1}`,
+        x - 18,
+        y + weaponBarHeight - 1,
+        '#ffffff',
+        '10px Arial'
+      )
+      
+      // Draw cooldown bar background
+      renderer.drawRect(x, y, weaponBarWidth, weaponBarHeight, '#333')
+      
+      if (weapon) {
+        // Draw cooldown bar fill (white when ready, empty when cooling down)
+        const cooldownPercentage = weapon.getCooldownPercentage()
+        const fillWidth = weaponBarWidth * cooldownPercentage
+        renderer.drawRect(x, y, fillWidth, weaponBarHeight, '#ffffff')
+        
+        // Draw weapon name
+        renderer.drawText(
+          weapon.name,
+          x + weaponBarWidth + 4,
+          y + weaponBarHeight - 1,
+          '#ffffff',
+          '10px Arial'
+        )
+      }
+    }
   }
 }

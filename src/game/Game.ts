@@ -129,7 +129,7 @@ export class Game {
       damageNumber.render(this.renderer)
     }
 
-    this.hud.render(this.renderer, this.player)
+    this.hud.render(this.renderer, this.player, this.canvas.width, this.canvas.height)
     
     this.renderer.present()
   }
@@ -160,7 +160,10 @@ export class Game {
   }
 
   private updateXPCrystals(deltaTime: number) {
-    this.xpCrystals.forEach(crystal => crystal.update(deltaTime))
+    const attractionRadius = this.player.pickupRadius * 2 // Attraction starts at 2x pickup radius
+    this.xpCrystals.forEach(crystal => 
+      crystal.update(deltaTime, this.player.x, this.player.y, attractionRadius)
+    )
   }
 
   private checkXPCrystalPickup() {

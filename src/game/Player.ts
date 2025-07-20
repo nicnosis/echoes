@@ -31,9 +31,10 @@ export class Player {
   public weapons: Weapon[] = []
   public maxWeapons: number = 6
   public projectiles: Projectile[] = []
+  private currentWeaponIndex: number = 0
   
   // Pickup radius
-  public pickupRadius: number
+  public pickupRadius: number = 35
 
   constructor(x: number, y: number) {
     this.x = x
@@ -42,9 +43,6 @@ export class Player {
     // Create dual wands
     this.weapons.push(new Weapon('wand', 500, 50, 10)) // Weapon range of 50
     this.weapons.push(new Weapon('wand', 500, 50, 10))
-    
-    // Pickup radius is 2/3 of weapon range
-    this.pickupRadius = 50 * (2/3)
   }
 
   update(deltaTime: number, inputState: InputState, canvasWidth: number, canvasHeight: number, enemies: Enemy[]) {
@@ -87,20 +85,51 @@ export class Player {
   }
 
   private updateWeapons(deltaTime: number, enemies: Enemy[]) {
+    // Update all weapons
     this.weapons.forEach(weapon => {
       weapon.update(deltaTime)
-      
-      // Find closest enemy within range
-      const target = this.findClosestEnemyInRange(weapon, enemies)
-      
-      // Only fire if there's a valid target
-      if (target && weapon.canFire()) {
-        const projectile = weapon.fire(this.x, this.y, target.x, target.y)
-        if (projectile) {
-          this.projectiles.push(projectile)
+    })
+    
+    if (this.weapons.length === 0) return
+    
+    // Check if current weapon can fire
+    const currentWeapon = this.weapons[this.currentWeaponIndex]
+    const target = this.findClosestEnemyInRange(currentWeapon, enemies)
+    
+    if (target && currentWeapon.canFire()) {
+      // Current weapon fires
+      const projectile = currentWeapon.fire(this.x, this.y, target.x, target.y)
+      if (projectile) {
+        this.projectiles.push(projectile)
+      }
+    } else if (target) {
+      // Current weapon can't fire, try to find next available weapon
+      const availableWeapon = this.findNextAvailableWeapon()
+      if (availableWeapon.weapon) {
+        const weaponTarget = this.findClosestEnemyInRange(availableWeapon.weapon, enemies)
+        if (weaponTarget) {
+          const projectile = availableWeapon.weapon.fire(this.x, this.y, weaponTarget.x, weaponTarget.y)
+          if (projectile) {
+            this.projectiles.push(projectile)
+            this.currentWeaponIndex = availableWeapon.index
+          }
         }
       }
-    })
+    }
+  }
+
+  private findNextAvailableWeapon(): { weapon: Weapon | null, index: number } {
+    // Start from the next weapon and cycle through all weapons
+    for (let i = 1; i < this.weapons.length; i++) {
+      const weaponIndex = (this.currentWeaponIndex + i) % this.weapons.length
+      const weapon = this.weapons[weaponIndex]
+      
+      if (weapon.canFire()) {
+        return { weapon, index: weaponIndex }
+      }
+    }
+    
+    return { weapon: null, index: -1 }
   }
 
   private findClosestEnemyInRange(weapon: Weapon, enemies: Enemy[]): Enemy | null {
