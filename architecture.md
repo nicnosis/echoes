@@ -9,7 +9,7 @@ Echoes is a game about transformation.
 You play as a chimera who acquires body parts, weapons, items, and abilities.
 Some themes include spirits (especially animals), growth, making difficult decisions, and overcoming spiritual battles.
 
-
+Our hero is selected by Gaia to overcome darkness and restore hope and balance to Earth. You are an icon of survival for living things on earth.
 
 ---
 
