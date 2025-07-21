@@ -1,11 +1,30 @@
-# Roguelike Game Project Architecture Plan
+# Echoes - Roguelike Game Project Architecture Plan
 
 ## 1. Overview  
 Build a 2D roguelike game inspired by Brotato. The game will run as a desktop app using Tauri + Claudia. Development will primarily use JavaScript/TypeScript for game logic and UI, with rendering on HTML5 Canvas or WebGL. Claude Code will assist in generating and debugging code.
 
+
+### Story and Theme
+Echoes is a game about transformation.
+You play as a chimera who acquires body parts, weapons, items, and abilities.
+Some themes include spirits (especially animals), growth, making difficult decisions, and overcoming spiritual battles.
+
+
+
 ---
 
 ## 2. Core Components
+### Core Game Loop
+Player will choose their character - a core spirit, e.g. primate, bird, lizard, etc. Right now we will only have primate to keep it simple.
+
+WAVE
+There will be 20 waves in this game. Each wave features randomly spawning enemies that the character defeats, then collects the xp crystals they drop.
+
+LEVEL UP SCREEN
+If player has increased by at least 1 level after the wave is complete, player will go to a level up screen where they can choose one new random stat/ability per level up.
+
+SHOP
+Before each wave (excluding wave 1) character will have a shop with four random items. Player can reroll for an increasing cost to get four new selections. Player can 'lock' an item: this makes the item stay so that the other, non-locked items will reroll. Locked items also persist between waves.
 
 ### 2.1 Game Logic  
 - Player mechanics: movement, attacks (start with one weapon — e.g., sword), health, level, XP, inventory (max 6 weapons eventually)  
