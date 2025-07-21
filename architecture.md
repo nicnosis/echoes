@@ -11,6 +11,8 @@ Some themes include spirits (especially animals), growth, making difficult decis
 
 Our hero is selected by Gaia to overcome darkness and restore hope and balance to Earth. You are an icon of survival for living things on earth.
 
+The game also features many mythical or significant creatures such as baphomet, cockatrice, manticore, and homonculus.
+
 ---
 
 ## 2. Core Components
