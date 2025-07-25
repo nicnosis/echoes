@@ -9,11 +9,18 @@ export class Enemy {
   public health: number = 15
   public maxHealth: number = 15
   private color: string
+  private dying: boolean = false
+  private deathTimer: number = 0
+  private deathDuration: number = 500 // 500ms death animation
+  private originalRadius: number = 12
+  private originalColor: string
 
   constructor(x: number, y: number) {
     this.x = x
     this.y = y
     this.color = this.generateRandomRedColor()
+    this.originalColor = this.color
+    this.originalRadius = this.radius
   }
 
   private generateRandomRedColor(): string {
@@ -29,6 +36,24 @@ export class Enemy {
 
   update(deltaTime: number, player: Player) {
     const dt = deltaTime / 1000
+
+    if (this.dying) {
+      // Update death animation
+      this.deathTimer += deltaTime
+      const progress = this.deathTimer / this.deathDuration
+      
+      // Shrink radius
+      this.radius = this.originalRadius * (1 - progress)
+      
+      // Fade to black
+      const colorProgress = Math.min(1, progress)
+      const r = Math.floor(255 * colorProgress) // Red component to black
+      const g = Math.floor(0 * colorProgress)   // Green stays 0
+      const b = Math.floor(0 * colorProgress)   // Blue stays 0
+      this.color = `rgb(${r},${g},${b})`
+      
+      return // Don't do normal updates while dying
+    }
 
     const dx = player.x - this.x
     const dy = player.y - this.y
@@ -48,6 +73,8 @@ export class Enemy {
   }
 
   private checkPlayerCollision(player: Player) {
+    if (this.dying) return // Can't damage player while dying
+    
     const dx = this.x - player.x
     const dy = this.y - player.y
     const distance = Math.sqrt(dx * dx + dy * dy)
@@ -71,7 +98,26 @@ export class Enemy {
   }
 
   takeDamage(damage: number): boolean {
+    if (this.dying) return false // Already dying
+    
     this.health -= damage
-    return this.health <= 0
+    if (this.health <= 0) {
+      this.startDeathAnimation()
+      return true
+    }
+    return false
+  }
+
+  private startDeathAnimation() {
+    this.dying = true
+    this.deathTimer = 0
+  }
+
+  public isDying(): boolean {
+    return this.dying
+  }
+
+  public isDeathAnimationComplete(): boolean {
+    return this.dying && this.deathTimer >= this.deathDuration
   }
 }

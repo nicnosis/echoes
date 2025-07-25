@@ -41,6 +41,14 @@ export class HUD {
   private renderXPBar(renderer: Renderer, player: Player, offsetX: number) {
     const x = offsetX
     const y = this.margin + this.barHeight + 5
+    // Level label (moved to left of XP bar, below HP text)
+    renderer.drawText(
+      `Lv ${player.level}`,
+      x - 32,
+      y + this.barHeight - 2,
+      '#00ff00',
+      '14px Arial'
+    )
     // Background
     renderer.drawRect(x, y, this.barWidth, this.barHeight, '#333')
     // XP bar fill
@@ -54,14 +62,6 @@ export class HUD {
       x + this.barWidth + 10,
       y + this.barHeight - 2,
       '#ffffff',
-      '14px Arial'
-    )
-    // Level label
-    renderer.drawText(
-      `Lv ${player.level}`,
-      x + this.barWidth + 60,
-      y + this.barHeight - 2,
-      '#00ff00',
       '14px Arial'
     )
   }

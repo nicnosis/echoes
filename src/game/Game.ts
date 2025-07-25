@@ -95,16 +95,22 @@ export class Game {
   private update(deltaTime: number) {
     const prevHP = this.player.currentHP;
     const prevLevel = this.player.level;
+    console.log(`🎮 Player HP before update: ${prevHP}, Flash Timer: ${this.player.damageFlashTimer > 0 ? 'FLASHING ⚡' : 'normal'}`);
     this.player.update(deltaTime, this.inputManager.inputState, this.canvas.width, this.canvas.height, this.enemies)
+    console.log(`🎮 Player HP after update: ${this.player.currentHP}`);
     if (this.player.currentHP < prevHP) {
       const dmg = prevHP - this.player.currentHP;
+      console.log(`💥 PLAYER DAMAGE DETECTED! Creating damage number: -${dmg} at (${this.player.x}, ${this.player.y - this.player.radius - 20})`);
+      console.log(`📊 Damage numbers before: ${this.damageNumbers.length}`);
       this.damageNumbers.push(new DamageNumber(
         this.player.x,
-        this.player.y - this.player.radius - 10,
+        this.player.y - this.player.radius - 20,
         dmg,
         false, // not a crit
-        `-${dmg}`
+        `-${dmg}`,
+        true // is player damage (red)
       ));
+      console.log(`📊 Damage numbers after: ${this.damageNumbers.length}`);
     }
     if (this.player.level > this.lastPlayerLevel) {
       this.damageNumbers.push(new DamageNumber(
@@ -121,6 +127,9 @@ export class Game {
     for (const enemy of this.enemies) {
       enemy.update(deltaTime, this.player)
     }
+
+    // Remove enemies that have completed their death animation
+    this.enemies = this.enemies.filter(enemy => !enemy.isDeathAnimationComplete())
 
     this.updateSoma(deltaTime)
     this.checkProjectileCollisions()
@@ -143,21 +152,29 @@ export class Game {
       // Use center-based collision for 'fully inside' logic
       for (let j = this.enemies.length - 1; j >= 0; j--) {
         const enemy = this.enemies[j]
+        if (enemy.isDying()) continue // Skip dying enemies
+        
         const dx = projectile.x - enemy.x;
         const dy = projectile.y - enemy.y;
         const distance = Math.sqrt(dx * dx + dy * dy);
         if (distance <= enemy.radius - projectile.size / 2) {
           this.player.projectiles.splice(i, 1)
-          const enemyDied = enemy.takeDamage(projectile.damage)
+          // Critical hit logic
+          let isCrit = false;
+          let damage = projectile.damage;
+          if (Math.random() * 100 < this.player.critChance) {
+            isCrit = true;
+            damage *= 2;
+          }
+          const enemyDied = enemy.takeDamage(damage)
           this.damageNumbers.push(new DamageNumber(
             enemy.x,
             enemy.y,
-            projectile.damage,
-            false // not a crit for now
+            damage,
+            isCrit
           ))
           if (enemyDied) {
             this.dropSoma(enemy.x, enemy.y)
-            this.enemies.splice(j, 1)
           }
           break
         }
@@ -195,6 +212,7 @@ export class Game {
       soma.render(this.renderer)
     }
 
+    console.log(`🎯 Rendering ${this.damageNumbers.length} damage numbers this frame`);
     for (const damageNumber of this.damageNumbers) {
       damageNumber.render(this.renderer)
     }
@@ -222,36 +240,178 @@ export class Game {
   private drawPauseOverlay() {
     const ctx = (this.renderer as any).ctx;
     ctx.save();
+    
     // Dim background
-    ctx.globalAlpha = 0.6;
-    ctx.fillStyle = '#111';
+    ctx.globalAlpha = 0.7;
+    ctx.fillStyle = '#000';
     ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
     ctx.globalAlpha = 1.0;
-    // Pause title
+    
+    // Smaller pause title
     ctx.fillStyle = '#fff';
-    ctx.font = 'bold 48px Arial';
+    ctx.font = 'bold 28px Arial';
     ctx.textAlign = 'center';
-    ctx.fillText('Paused', this.canvas.width / 2, 120);
-    // Stats panel
-    ctx.font = '24px Arial';
-    ctx.textAlign = 'left';
-    const panelX = this.canvas.width / 2 - 200;
-    const panelY = 180;
-    const lineHeight = 38;
-    const stats = [
-      [`Max HP`, this.player.maxHP],
-      [`Level`, this.player.level],
-      [`Movement Speed`, 0],
-      [`Crit Chance`, '5%'],
-      [`Player Attack`, 0],
-      [`Player Armor`, 0],
-      [`Luck`, 0],
-    ];
-    ctx.fillStyle = '#fff';
-    for (let i = 0; i < stats.length; i++) {
-      ctx.fillText(`${stats[i][0]}: ${stats[i][1]}`, panelX, panelY + i * lineHeight);
-    }
+    ctx.fillText('PAUSED', this.canvas.width / 2, 40);
+    
+    // Main container dimensions - 95% width
+    const containerWidth = this.canvas.width * 0.95;
+    const containerX = (this.canvas.width - containerWidth) / 2;
+    const containerY = 70;
+    const containerHeight = this.canvas.height - 140;
+    
+    // Draw main container background
+    ctx.fillStyle = '#222';
+    ctx.fillRect(containerX, containerY, containerWidth, containerHeight);
+    ctx.strokeStyle = '#444';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(containerX, containerY, containerWidth, containerHeight);
+    
+    // Left section (80% for weapons and items)
+    const leftWidth = containerWidth * 0.8;
+    const leftHeight = containerHeight - 80; // Leave space for buttons
+    const leftX = containerX + 20;
+    const leftY = containerY + 20;
+    
+    // Right section (20% for stats)
+    const rightWidth = containerWidth * 0.2 - 40;
+    const rightHeight = leftHeight;
+    const rightX = leftX + leftWidth + 20;
+    const rightY = leftY;
+    
+    this.drawWeaponsSection(ctx, leftX, leftY, leftWidth, leftHeight * 0.4);
+    this.drawItemsSection(ctx, leftX, leftY + leftHeight * 0.4 + 10, leftWidth, leftHeight * 0.6 - 10);
+    this.drawStatsSection(ctx, rightX, rightY, rightWidth, rightHeight);
+    this.drawBottomButtons(ctx, containerX, containerY + containerHeight - 60, containerWidth, 40);
+    
     ctx.restore();
+  }
+
+  private drawWeaponsSection(ctx: CanvasRenderingContext2D, x: number, y: number, width: number, height: number) {
+    ctx.fillStyle = '#fff';
+    ctx.font = 'bold 16px Arial';
+    ctx.textAlign = 'left';
+    ctx.fillText('WEAPONS', x, y + 18);
+    
+    const cellSize = 50;
+    const cellSpacing = 10;
+    const startX = x + 10;
+    const startY = y + 30;
+    
+    for (let i = 0; i < 6; i++) {
+      const cellX = startX + i * (cellSize + cellSpacing);
+      
+      // Cell background
+      ctx.fillStyle = '#444';
+      ctx.fillRect(cellX, startY, cellSize, cellSize);
+      ctx.strokeStyle = '#666';
+      ctx.lineWidth = 1;
+      ctx.strokeRect(cellX, startY, cellSize, cellSize);
+      
+      // Placeholder text - white and left-aligned
+      ctx.fillStyle = '#fff';
+      ctx.font = '12px Arial';
+      ctx.textAlign = 'left';
+      ctx.fillText(`W${i + 1}`, cellX + 4, startY + 16);
+    }
+  }
+
+  private drawItemsSection(ctx: CanvasRenderingContext2D, x: number, y: number, width: number, height: number) {
+    ctx.fillStyle = '#fff';
+    ctx.font = 'bold 16px Arial';
+    ctx.textAlign = 'left';
+    ctx.fillText('ITEMS', x, y + 18);
+    
+    const cellSize = 40;
+    const cellSpacing = 8;
+    const startX = x + 10;
+    const startY = y + 30;
+    const cols = Math.floor((width - 20) / (cellSize + cellSpacing));
+    const rows = Math.floor((height - 40) / (cellSize + cellSpacing));
+    
+    for (let row = 0; row < rows; row++) {
+      for (let col = 0; col < cols; col++) {
+        const cellX = startX + col * (cellSize + cellSpacing);
+        const cellY = startY + row * (cellSize + cellSpacing);
+        
+        // Cell background
+        ctx.fillStyle = '#444';
+        ctx.fillRect(cellX, cellY, cellSize, cellSize);
+        ctx.strokeStyle = '#666';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(cellX, cellY, cellSize, cellSize);
+        
+        // No text for item cells - left empty as requested
+      }
+    }
+  }
+
+  private drawStatsSection(ctx: CanvasRenderingContext2D, x: number, y: number, width: number, height: number) {
+    // Dark background with 0.6 opacity for stats pane
+    ctx.globalAlpha = 0.6;
+    ctx.fillStyle = '#000';
+    ctx.fillRect(x - 10, y - 10, width + 20, height + 20);
+    ctx.globalAlpha = 1.0;
+    
+    ctx.fillStyle = '#fff';
+    ctx.font = 'bold 16px Arial';
+    ctx.textAlign = 'left';
+    ctx.fillText('STATS', x, y + 18);
+    
+    const lineHeight = 28;
+    const startY = y + 40;
+    
+    const stats = [
+      { icon: '❤️', label: 'Max HP', value: this.player.maxHP },
+      { icon: '⚡', label: 'Level', value: this.player.level },
+      { icon: '🏃', label: 'Move Speed', value: 100 },
+      { icon: '💥', label: 'Crit Chance', value: '5%' },
+      { icon: '⚔️', label: 'Attack', value: 10 },
+      { icon: '🛡️', label: 'Armor', value: 0 },
+      { icon: '🍀', label: 'Luck', value: 0 }
+    ];
+    
+    ctx.font = '12px Arial';
+    ctx.fillStyle = '#fff';
+    
+    for (let i = 0; i < stats.length; i++) {
+      const stat = stats[i];
+      const yPos = startY + i * lineHeight;
+      
+      // Draw icon
+      ctx.fillText(stat.icon, x, yPos);
+      
+      // Draw stat text (adjusted to fit within container)
+      const statText = `${stat.label}: ${stat.value}`;
+      ctx.fillText(statText, x + 20, yPos);
+    }
+  }
+
+  private drawBottomButtons(ctx: CanvasRenderingContext2D, x: number, y: number, width: number, height: number) {
+    const buttonWidth = 120;
+    const buttonHeight = 30;
+    const buttonSpacing = 20;
+    // Left-align buttons with item cells (x + 30 to match item cell alignment)
+    const startX = x + 30;
+    
+    const buttons = ['RESUME', 'RESTART', 'MAIN MENU'];
+    
+    for (let i = 0; i < buttons.length; i++) {
+      const buttonX = startX + i * (buttonWidth + buttonSpacing);
+      const buttonY = y + (height - buttonHeight) / 2;
+      
+      // Button background
+      ctx.fillStyle = i === 0 ? '#4a4a4a' : '#3a3a3a';
+      ctx.fillRect(buttonX, buttonY, buttonWidth, buttonHeight);
+      ctx.strokeStyle = '#666';
+      ctx.lineWidth = 1;
+      ctx.strokeRect(buttonX, buttonY, buttonWidth, buttonHeight);
+      
+      // Button text
+      ctx.fillStyle = '#fff';
+      ctx.font = '14px Arial';
+      ctx.textAlign = 'center';
+      ctx.fillText(buttons[i], buttonX + buttonWidth / 2, buttonY + buttonHeight / 2 + 4);
+    }
   }
 
   private spawnEnemies(count: number) {
@@ -279,15 +439,18 @@ export class Game {
       // Spread in a small arc/circle with random offset
       const angle = baseAngle + i * angleStep + (Math.random() - 0.5) * 0.4;
       const distance = 20 + Math.random() * 10;
-      const sx = x + Math.cos(angle) * distance;
-      const sy = y + Math.sin(angle) * distance;
-      this.somaList.push(new Soma(sx, sy));
+      const targetX = x + Math.cos(angle) * distance;
+      const targetY = y + Math.sin(angle) * distance;
+      // Create Soma with scatter animation from center to target position
+      this.somaList.push(new Soma(x, y, 1, 1, targetX, targetY));
     }
   }
 
   private updateSoma(deltaTime: number) {
     const attractionRadius = this.player.pickupRadius // Attraction starts at pickup radius
     this.somaList.forEach(soma => {
+      soma.update(deltaTime); // Update scatter animation
+      
       const dx = this.player.x - soma.x;
       const dy = this.player.y - soma.y;
       const distance = Math.sqrt(dx * dx + dy * dy);

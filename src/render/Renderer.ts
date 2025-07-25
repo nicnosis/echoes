@@ -37,9 +37,28 @@ export class Renderer {
     this.ctx.fill()
   }
 
+  // Draw text with proper alpha handling
   drawText(text: string, x: number, y: number, color: string = '#fff', font: string = '16px Arial') {
-    this.ctx.fillStyle = color
+    this.ctx.save()
+    
+    // Extract alpha from rgba color if present
+    if (color.includes('rgba(')) {
+      const alphaMatch = color.match(/rgba\([^,]+,[^,]+,[^,]+,([^)]+)\)/)
+      if (alphaMatch) {
+        const alpha = parseFloat(alphaMatch[1])
+        this.ctx.globalAlpha = alpha
+        // Convert rgba to rgb for fillStyle
+        const rgbColor = color.replace(/rgba\(([^,]+,[^,]+,[^,]+),[^)]+\)/, 'rgb($1)')
+        this.ctx.fillStyle = rgbColor
+      } else {
+        this.ctx.fillStyle = color
+      }
+    } else {
+      this.ctx.fillStyle = color
+    }
+    
     this.ctx.font = font
     this.ctx.fillText(text, x, y)
+    this.ctx.restore()
   }
 }

@@ -36,6 +36,10 @@ export class Player {
   // Pickup radius
   public pickupRadius: number = 50
   public gold: number = 0;
+  public attack: number = 0;
+  public armor: number = 0;
+  public critChance: number = 5; // percent
+  public luck: number = 0;
 
   constructor(x: number, y: number) {
     this.x = x
@@ -208,11 +212,17 @@ export class Player {
   }
 
   takeDamage(amount: number = 1): boolean {
-    if (this.damageCooldown > 0) return false
+    console.log(`⚔️  Player.takeDamage called! Amount: ${amount}, Current HP: ${this.currentHP}, Cooldown: ${this.damageCooldown}`);
+    if (this.damageCooldown > 0) {
+      console.log(`🛡️ Damage blocked by cooldown! Remaining: ${this.damageCooldown}ms`);
+      return false
+    }
     
+    console.log(`💔 Player taking ${amount} damage! HP: ${this.currentHP} -> ${this.currentHP - amount}`);
     this.currentHP = Math.max(0, this.currentHP - amount)
     this.damageCooldown = this.damageCooldownDuration
     this.damageFlashTimer = this.damageFlashDuration
+    console.log(`⚡ Flash timer started: ${this.damageFlashTimer}ms`);
     
     return true
   }

@@ -14,10 +14,23 @@ export class Soma {
   private aspect: number
   private rotation: number
   private alpha: number
+  
+  // Scatter animation properties
+  private targetX: number
+  private targetY: number
+  private startX: number
+  private startY: number
+  private scatterProgress: number = 0
+  private scatterDuration: number = 300 // 300ms
+  private scattering: boolean = false
 
-  constructor(x: number, y: number, somaValue: number = 1, goldValue: number = 1) {
+  constructor(x: number, y: number, somaValue: number = 1, goldValue: number = 1, targetX?: number, targetY?: number) {
+    this.startX = x
+    this.startY = y
     this.x = x
     this.y = y
+    this.targetX = targetX || x
+    this.targetY = targetY || y
     this.somaValue = somaValue
     this.goldValue = goldValue
     this.floatOffset = Math.random() * Math.PI * 2
@@ -25,15 +38,36 @@ export class Soma {
     this.aspect = 1 + Math.random() // 1 to 2
     this.rotation = Math.random() * Math.PI * 2
     this.alpha = 0.4 + Math.random() * 0.3 // 0.4 to 0.7
+    
+    // Start scatter animation if target position is different
+    if (targetX !== undefined && targetY !== undefined && (targetX !== x || targetY !== y)) {
+      this.scattering = true
+    }
   }
 
   update(deltaTime: number) {
-    this.floatOffset += this.floatSpeed * deltaTime
+    // Handle scatter animation only
+    if (this.scattering) {
+      this.scatterProgress += deltaTime
+      
+      if (this.scatterProgress >= this.scatterDuration) {
+        // Animation complete
+        this.scattering = false
+        this.x = this.targetX
+        this.y = this.targetY
+      } else {
+        // Interpolate position with easing
+        const t = this.scatterProgress / this.scatterDuration
+        const easedT = 1 - Math.pow(1 - t, 3) // Ease out cubic for smooth deceleration
+        
+        this.x = this.startX + (this.targetX - this.startX) * easedT
+        this.y = this.startY + (this.targetY - this.startY) * easedT
+      }
+    }
   }
 
   render(renderer: Renderer) {
     if (this.collected) return
-    const floatY = this.y + Math.sin(this.floatOffset) * 2
     let width = this.radius * this.aspect
     let height = this.radius * (2 - this.aspect)
     // Enforce a minimum width and height for visibility
@@ -43,7 +77,7 @@ export class Soma {
     const ctx = (renderer as any).ctx
     ctx.save()
     ctx.globalAlpha = this.alpha
-    ctx.translate(this.x, floatY)
+    ctx.translate(this.x, this.y)
     ctx.rotate(this.rotation)
     // Add pinkish glow
     ctx.shadowColor = '#ff66cc'
