@@ -34,15 +34,16 @@ export class Player {
   private currentWeaponIndex: number = 0
   
   // Pickup radius
-  public pickupRadius: number = 35
+  public pickupRadius: number = 50
+  public gold: number = 0;
 
   constructor(x: number, y: number) {
     this.x = x
     this.y = y
     
     // Create dual wands
-    this.weapons.push(new Weapon('wand', 500, 50, 10)) // Weapon range of 50
-    this.weapons.push(new Weapon('wand', 500, 50, 10))
+    this.weapons.push(new Weapon('wand', 500, 100, 10)) // Weapon range of 50
+    this.weapons.push(new Weapon('wand', 500, 100, 10))
   }
 
   update(deltaTime: number, inputState: InputState, canvasWidth: number, canvasHeight: number, enemies: Enemy[]) {
@@ -89,30 +90,41 @@ export class Player {
     this.weapons.forEach(weapon => {
       weapon.update(deltaTime)
     })
-    
     if (this.weapons.length === 0) return
-    
-    // Check if current weapon can fire
-    const currentWeapon = this.weapons[this.currentWeaponIndex]
-    const target = this.findClosestEnemyInRange(currentWeapon, enemies)
-    
-    if (target && currentWeapon.canFire()) {
-      // Current weapon fires
-      const projectile = currentWeapon.fire(this.x, this.y, target.x, target.y)
-      if (projectile) {
-        this.projectiles.push(projectile)
+
+    // Track how much damage will be dealt to each enemy this frame
+    const enemyDamageMap = new Map<Enemy, number>()
+    // Copy of enemies array for targeting
+    const availableEnemies = enemies.slice()
+
+    for (let w = 0; w < this.weapons.length; w++) {
+      const weapon = this.weapons[w]
+      if (!weapon.canFire()) continue
+
+      // Find the best target: one that will not be overkilled
+      let bestTarget: Enemy | null = null
+      let bestTargetHPLeft = Infinity
+      for (const enemy of availableEnemies) {
+        // Calculate how much damage this enemy will take from already assigned weapons
+        const pendingDamage = enemyDamageMap.get(enemy) || 0
+        const hpLeft = enemy.health - pendingDamage
+        // Only target if weapon can reach and enemy will survive at least 1 damage
+        const dx = enemy.x - this.x
+        const dy = enemy.y - this.y
+        const distance = Math.sqrt(dx * dx + dy * dy)
+        const edgeDistance = Math.max(0, distance - enemy.radius)
+        if (edgeDistance <= weapon.range && hpLeft > 0 && hpLeft < bestTargetHPLeft) {
+          bestTarget = enemy
+          bestTargetHPLeft = hpLeft
+        }
       }
-    } else if (target) {
-      // Current weapon can't fire, try to find next available weapon
-      const availableWeapon = this.findNextAvailableWeapon()
-      if (availableWeapon.weapon) {
-        const weaponTarget = this.findClosestEnemyInRange(availableWeapon.weapon, enemies)
-        if (weaponTarget) {
-          const projectile = availableWeapon.weapon.fire(this.x, this.y, weaponTarget.x, weaponTarget.y)
-          if (projectile) {
-            this.projectiles.push(projectile)
-            this.currentWeaponIndex = availableWeapon.index
-          }
+      if (bestTarget) {
+        // Assign this weapon to attack this enemy
+        const projectile = weapon.fire(this.x, this.y, bestTarget.x, bestTarget.y)
+        if (projectile) {
+          this.projectiles.push(projectile)
+          // Track the damage
+          enemyDamageMap.set(bestTarget, (enemyDamageMap.get(bestTarget) || 0) + weapon.damage)
         }
       }
     }
@@ -140,10 +152,10 @@ export class Player {
       const dx = enemy.x - this.x
       const dy = enemy.y - this.y
       const distance = Math.sqrt(dx * dx + dy * dy)
-
-      if (distance <= weapon.range && distance < closestDistance) {
+      const edgeDistance = Math.max(0, distance - enemy.radius)
+      if (edgeDistance <= weapon.range && edgeDistance < closestDistance) {
         closestEnemy = enemy
-        closestDistance = distance
+        closestDistance = edgeDistance
       }
     }
 
@@ -215,20 +227,21 @@ export class Player {
     }
   }
 
+  gainGold(amount: number) {
+    this.gold += amount;
+  }
+
   getColor(): string {
     if (this.damageFlashTimer > 0) {
-      // Fade from yellow back to blue over damage flash duration
+      // Fade from orange back to blue over damage flash duration
       const flashProgress = 1 - (this.damageFlashTimer / this.damageFlashDuration)
-      const yellowIntensity = Math.max(0, 1 - flashProgress)
-      
-      // Interpolate between yellow (255,255,0) and blue (0,100,255)
-      const r = Math.floor(255 * yellowIntensity)
-      const g = Math.floor(255 * yellowIntensity + 100 * (1 - yellowIntensity))
-      const b = Math.floor(255 * (1 - yellowIntensity))
-      
+      const orangeIntensity = Math.max(0, 1 - flashProgress)
+      // Interpolate between orange (255,140,0) and blue (0,100,255)
+      const r = Math.floor(255 * orangeIntensity)
+      const g = Math.floor(140 * orangeIntensity + 100 * (1 - orangeIntensity))
+      const b = Math.floor(0 * orangeIntensity + 255 * (1 - orangeIntensity))
       return `rgb(${r},${g},${b})`
     }
-    
     return '#0064ff' // Default blue
   }
 

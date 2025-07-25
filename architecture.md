@@ -19,14 +19,21 @@ The game also features many mythical or significant creatures such as baphomet, 
 ### Core Game Loop
 Player will choose their character - a core spirit, e.g. primate, bird, lizard, etc. Right now we will only have primate to keep it simple.
 
-WAVE
+HOME SCREEN
+
+WAVE SCREEN
 There will be 21 waves in this game. Each wave features randomly spawning enemies that the character defeats, then collects the crystals they drop. The waves are packaged into three "Episodes" each with 7 waves. Each episode will have a pivotal mechanic shift based on a random story event.
 
 LEVEL UP SCREEN
 If player has increased by at least 1 level after the wave is complete, player will go to a level up screen where they can choose one new random stat/ability per level up.
 
-SHOP
+SHOP SCREEN
 After each wave (excluding last wave) character will have a shop with four random items. Player can reroll for an increasing cost to get four new selections. Player can 'lock' an item: this makes the item stay so that the other, non-locked items will reroll. Locked items also persist between waves.
+
+After player is done shopping they can click "Go to wave X"
+
+RESULT SCREEN
+When the player clears Wave 21, the game is complete. Stats and items are shown on this result view. Then the player can return to the HOME SCREEN.
 
 ### 2.1 Game Logic  
 - Player mechanics: movement, attacks (start with one weapon — e.g., sword), health, level, XP, inventory (max 6 weapons eventually)  
@@ -36,10 +43,10 @@ After each wave (excluding last wave) character will have a shop with four rando
 - Bosses: The last wave of each episode (7, 14, and 21) will have a boss battle.
 - Shop system: after each wave except the last, player visits shop with 4 item/weapon options  
   - Player can buy or lock items/weapons for next shops  
-  - Player can pay crystals to reroll shop options; reroll cost increases over time  
+  - Player can pay Soma to reroll shop options; reroll cost increases over time  
 - Level-up system: on leveling up, player picks one of four random stat upgrades or can reroll for different choices  
-- Pickups: crystals drop giving both money and XP  
-- Player stats: HP, level, XP, attack, defense, crit chance, movement speed
+- Pickups: Soma drop giving both money and XP  
+- Player stats: HP, level, XP, attack (how much damage you deal), defense (how much you reduce damage by), crit chance (percent change to deal double damage), movement speed (percent that movement speed is increased by)
 
 ### 2.2 User Interface (UI)  
 - Main menu: start game, options, quit  

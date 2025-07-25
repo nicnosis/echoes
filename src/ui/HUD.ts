@@ -9,23 +9,24 @@ export class HUD {
   constructor() {}
 
   render(renderer: Renderer, player: Player, canvasWidth?: number, canvasHeight?: number) {
-    this.renderHealthBar(renderer, player)
-    this.renderXPBar(renderer, player)
+    const barOffsetX = this.margin + 60; // Move bars to the right
+    this.renderHealthBar(renderer, player, barOffsetX)
+    this.renderXPBar(renderer, player, barOffsetX)
+    this.renderGold(renderer, player, barOffsetX)
     this.renderWeaponCooldowns(renderer, player, canvasWidth || 800, canvasHeight || 600)
   }
 
-  private renderHealthBar(renderer: Renderer, player: Player) {
-    const x = this.margin
+  private renderHealthBar(renderer: Renderer, player: Player, offsetX: number) {
+    const x = offsetX
     const y = this.margin
-    
+    // Label
+    renderer.drawText('HP', x - 32, y + this.barHeight - 2, '#fff', '14px Arial')
     // Background
     renderer.drawRect(x, y, this.barWidth, this.barHeight, '#333')
-    
     // Health bar fill
     const healthPercentage = player.currentHP / player.maxHP
     const fillWidth = this.barWidth * healthPercentage
     renderer.drawRect(x, y, fillWidth, this.barHeight, '#ff0000')
-    
     // Health text
     const healthText = `${player.currentHP}/${player.maxHP}`
     renderer.drawText(
@@ -37,18 +38,15 @@ export class HUD {
     )
   }
 
-  private renderXPBar(renderer: Renderer, player: Player) {
-    const x = this.margin
+  private renderXPBar(renderer: Renderer, player: Player, offsetX: number) {
+    const x = offsetX
     const y = this.margin + this.barHeight + 5
-    
     // Background
     renderer.drawRect(x, y, this.barWidth, this.barHeight, '#333')
-    
     // XP bar fill
     const xpPercentage = player.currentXP / player.xpToNextLevel
     const fillWidth = this.barWidth * xpPercentage
     renderer.drawRect(x, y, fillWidth, this.barHeight, '#8800ff')
-    
     // XP percentage text
     const xpText = `${Math.floor(player.getXPPercentage())}%`
     renderer.drawText(
@@ -57,6 +55,27 @@ export class HUD {
       y + this.barHeight - 2,
       '#ffffff',
       '14px Arial'
+    )
+    // Level label
+    renderer.drawText(
+      `Lv ${player.level}`,
+      x + this.barWidth + 60,
+      y + this.barHeight - 2,
+      '#00ff00',
+      '14px Arial'
+    )
+  }
+
+  private renderGold(renderer: Renderer, player: Player, offsetX: number) {
+    const x = offsetX
+    const y = this.margin + this.barHeight * 2 + 15
+    const goldText = `Gold: ${player.gold}`
+    renderer.drawText(
+      goldText,
+      x,
+      y + this.barHeight - 2,
+      '#ffd700',
+      '16px Arial'
     )
   }
 
