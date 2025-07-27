@@ -47,8 +47,8 @@ export class Player {
     this.y = y
     
     // Create dual wands
-    this.weapons.push(new Weapon('wand', 500, 100, 10)) // Weapon range of 50
-    this.weapons.push(new Weapon('wand', 500, 100, 10))
+    this.weapons.push(new Weapon('wand', 500, 100, 5)) // Weapon range of 50
+    // this.weapons.push(new Weapon('wand', 500, 100, 10))
   }
 
   update(deltaTime: number, inputState: InputState, canvasWidth: number, canvasHeight: number, enemies: Enemy[]) {

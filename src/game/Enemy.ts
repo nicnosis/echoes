@@ -6,7 +6,7 @@ export class Enemy {
   public y: number
   public radius: number = 12
   public speed: number = 100
-  public health: number = 15
+  public health: number = 3
   public maxHealth: number = 15
   private color: string
   private dying: boolean = false
@@ -47,7 +47,7 @@ export class Enemy {
       
       // Fade to black
       const colorProgress = Math.min(1, progress)
-      const r = Math.floor(0 * colorProgress) // Red component to black
+      const r = Math.floor(255 - 0 * colorProgress) // Red component to black
       const g = Math.floor(0 * colorProgress)   // Green stays 0
       const b = Math.floor(0 * colorProgress)   // Blue stays 0
       this.color = `rgb(${r},${g},${b})`

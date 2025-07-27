@@ -5,6 +5,7 @@ import { Enemy } from './Enemy'
 import { DamageNumber } from './DamageNumber'
 import { Soma } from './Soma'
 import { HUD } from '../ui/HUD'
+import { SpawnManager } from './SpawnManager'
 
 export class Game {
   private canvas: HTMLCanvasElement
@@ -17,8 +18,7 @@ export class Game {
   private damageNumbers: DamageNumber[] = []
   private somaList: Soma[] = []
   private hud: HUD
-  private enemySpawnTimer: number = 0
-  private enemySpawnInterval: number = 5000 // 5 seconds
+  private spawnManager: SpawnManager
   private lastPlayerHP: number
   private lastPlayerLevel: number;
   private waveIndex: number = 0;
@@ -54,9 +54,9 @@ export class Game {
     this.inputManager = new InputManager()
     this.player = new Player(canvas.width / 2, canvas.height / 2)
     this.hud = new HUD()
+    this.spawnManager = new SpawnManager(canvas.width, canvas.height)
     
-    // Spawn initial 5 enemies
-    this.spawnEnemies(5)
+    // No initial enemies - let the spawn manager handle spawning
     this.lastPlayerHP = this.player.currentHP
     this.lastPlayerLevel = this.player.level;
     this.waveIndex = 0;
@@ -137,7 +137,16 @@ export class Game {
     this.checkProjectileCollisions()
     this.checkSomaPickup()
     this.updateDamageNumbers(deltaTime)
-    this.updateEnemySpawning(deltaTime)
+    
+    // Use new spawn manager
+    const newEnemies = this.spawnManager.update(deltaTime, this.player, this.enemies)
+    this.enemies.push(...newEnemies)
+    
+    // Debug logging for spawn system
+    const totalEnemies = this.spawnManager.getCurrentTotalEnemyCount(this.enemies)
+    const spawnProb = this.spawnManager.getCurrentSpawnProbability()
+    const missedBonus = this.spawnManager.getMissedSpawnBonus()
+    console.log(`🎯 Spawn System: ${totalEnemies} total enemies, ${spawnProb.toFixed(2)} spawn probability, ${missedBonus.toFixed(2)} missed bonus`)
     // Update wave timer
     if (this.waveIndex < this.waveData.length) {
       this.waveTimer -= deltaTime / 1000;
@@ -213,6 +222,9 @@ export class Game {
     for (const soma of this.somaList) {
       soma.render(this.renderer)
     }
+
+    // Render spawn manager (pre-spawn indicators)
+    this.spawnManager.render(this.renderer)
 
     console.log(`🎯 Rendering ${this.damageNumbers.length} damage numbers this frame`);
     for (const damageNumber of this.damageNumbers) {
@@ -416,22 +428,7 @@ export class Game {
     }
   }
 
-  private spawnEnemies(count: number) {
-    for (let i = 0; i < count; i++) {
-      // Spawn enemies away from player
-      let x, y
-      do {
-        x = Math.random() * (this.canvas.width - 64) + 32
-        y = Math.random() * (this.canvas.height - 64) + 32
-        const dx = x - this.player.x
-        const dy = y - this.player.y
-        const distance = Math.sqrt(dx * dx + dy * dy)
-        if (distance > 100) break // Ensure minimum distance from player
-      } while (true)
-      
-      this.enemies.push(new Enemy(x, y))
-    }
-  }
+
 
   private dropSoma(x: number, y: number) {
     const somaCount = 3 + Math.floor(Math.random() * 3) // 3-5 Soma
@@ -483,12 +480,5 @@ export class Game {
     }
   }
 
-  private updateEnemySpawning(deltaTime: number) {
-    this.enemySpawnTimer += deltaTime
-    
-    if (this.enemySpawnTimer >= this.enemySpawnInterval) {
-      this.spawnEnemies(5)
-      this.enemySpawnTimer = 0
-    }
-  }
+
 }
