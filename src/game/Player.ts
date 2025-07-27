@@ -20,8 +20,9 @@ export class Player {
   public xpToNextLevel: number = 100
   
   // Damage system
-  public damageCooldown: number = 0
-  public damageCooldownDuration: number = 500
+  public isInvulnerable: boolean = false
+  public invulnerabilityTimer: number = 0
+  public invulnerabilityDuration: number = 500 // 1 second of invulnerability
   
   // Visual effects
   public damageFlashTimer: number = 0
@@ -52,8 +53,11 @@ export class Player {
 
   update(deltaTime: number, inputState: InputState, canvasWidth: number, canvasHeight: number, enemies: Enemy[]) {
     // Update timers
-    if (this.damageCooldown > 0) {
-      this.damageCooldown -= deltaTime
+    if (this.invulnerabilityTimer > 0) {
+      this.invulnerabilityTimer -= deltaTime
+      if (this.invulnerabilityTimer <= 0) {
+        this.isInvulnerable = false
+      }
     }
     
     if (this.damageFlashTimer > 0) {
@@ -183,8 +187,8 @@ export class Player {
       this.renderWeaponRange(renderer, this.weapons[0])
     }
     
-    // Draw player as a circle with damage flash color
-    renderer.drawCircle(this.x, this.y, this.radius, this.getColor())
+    // Draw player as a square with damage flash color
+    renderer.drawRect(this.x - this.radius, this.y - this.radius, this.radius * 2, this.radius * 2, this.getColor())
   }
 
   private renderWeaponRange(renderer: Renderer, weapon: Weapon) {
@@ -212,17 +216,18 @@ export class Player {
   }
 
   takeDamage(amount: number = 1): boolean {
-    console.log(`⚔️  Player.takeDamage called! Amount: ${amount}, Current HP: ${this.currentHP}, Cooldown: ${this.damageCooldown}`);
-    if (this.damageCooldown > 0) {
-      console.log(`🛡️ Damage blocked by cooldown! Remaining: ${this.damageCooldown}ms`);
+    console.log(`⚔️  Player.takeDamage called! Amount: ${amount}, Current HP: ${this.currentHP}, Invulnerable: ${this.isInvulnerable}`);
+    if (this.isInvulnerable) {
+      console.log(`🛡️ Damage blocked by invulnerability! Remaining: ${this.invulnerabilityTimer}ms`);
       return false
     }
     
     console.log(`💔 Player taking ${amount} damage! HP: ${this.currentHP} -> ${this.currentHP - amount}`);
     this.currentHP = Math.max(0, this.currentHP - amount)
-    this.damageCooldown = this.damageCooldownDuration
+    this.isInvulnerable = true
+    this.invulnerabilityTimer = this.invulnerabilityDuration
     this.damageFlashTimer = this.damageFlashDuration
-    console.log(`⚡ Flash timer started: ${this.damageFlashTimer}ms`);
+    console.log(`⚡ Invulnerability started: ${this.invulnerabilityTimer}ms`);
     
     return true
   }
@@ -242,6 +247,10 @@ export class Player {
   }
 
   getColor(): string {
+    if (this.isInvulnerable) {
+      return '#00ffff' // Bright cyan when invulnerable
+    }
+    
     if (this.damageFlashTimer > 0) {
       // Fade from orange back to blue over damage flash duration
       const flashProgress = 1 - (this.damageFlashTimer / this.damageFlashDuration)

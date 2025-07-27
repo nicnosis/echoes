@@ -85,7 +85,7 @@ export class Enemy {
   }
 
   render(renderer: Renderer) {
-    renderer.drawCircle(this.x, this.y, this.radius, this.color)
+    renderer.drawRect(this.x - this.radius, this.y - this.radius, this.radius * 2, this.radius * 2, this.color)
   }
 
   getBounds() {
