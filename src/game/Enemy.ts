@@ -11,7 +11,7 @@ export class Enemy {
   private color: string
   private dying: boolean = false
   private deathTimer: number = 0
-  private deathDuration: number = 500 // 500ms death animation
+  private deathDuration: number = 400 // 500ms death animation
   private originalRadius: number = 12
   private originalColor: string
 
@@ -47,7 +47,7 @@ export class Enemy {
       
       // Fade to black
       const colorProgress = Math.min(1, progress)
-      const r = Math.floor(255 * colorProgress) // Red component to black
+      const r = Math.floor(0 * colorProgress) // Red component to black
       const g = Math.floor(0 * colorProgress)   // Green stays 0
       const b = Math.floor(0 * colorProgress)   // Blue stays 0
       this.color = `rgb(${r},${g},${b})`

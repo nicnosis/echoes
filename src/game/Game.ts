@@ -98,6 +98,12 @@ export class Game {
     console.log(`🎮 Player HP before update: ${prevHP}, Flash Timer: ${this.player.damageFlashTimer > 0 ? 'FLASHING ⚡' : 'normal'}`);
     this.player.update(deltaTime, this.inputManager.inputState, this.canvas.width, this.canvas.height, this.enemies)
     console.log(`🎮 Player HP after update: ${this.player.currentHP}`);
+    
+    for (const enemy of this.enemies) {
+      enemy.update(deltaTime, this.player)
+    }
+    
+    // Check for player damage AFTER enemies have updated
     if (this.player.currentHP < prevHP) {
       const dmg = prevHP - this.player.currentHP;
       console.log(`💥 PLAYER DAMAGE DETECTED! Creating damage number: -${dmg} at (${this.player.x}, ${this.player.y - this.player.radius - 20})`);
@@ -123,10 +129,6 @@ export class Game {
     }
     this.lastPlayerLevel = this.player.level;
     this.lastPlayerHP = this.player.currentHP;
-    
-    for (const enemy of this.enemies) {
-      enemy.update(deltaTime, this.player)
-    }
 
     // Remove enemies that have completed their death animation
     this.enemies = this.enemies.filter(enemy => !enemy.isDeathAnimationComplete())
