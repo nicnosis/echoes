@@ -19,7 +19,7 @@ export class Game {
   private somaList: Soma[] = []
   private hud: HUD
   private spawnManager: SpawnManager
-  private lastPlayerHP: number
+
   private lastPlayerLevel: number;
   private waveIndex: number = 0;
   private waveTimer: number = 0;
@@ -57,7 +57,6 @@ export class Game {
     this.spawnManager = new SpawnManager(canvas.width, canvas.height)
     
     // No initial enemies - let the spawn manager handle spawning
-    this.lastPlayerHP = this.player.currentHP
     this.lastPlayerLevel = this.player.level;
     this.waveIndex = 0;
     this.waveTimer = this.waveData[0].duration;
@@ -93,27 +92,25 @@ export class Game {
   }
 
   private update(deltaTime: number) {
-    const prevHP = this.player.currentHP;
     const prevLevel = this.player.level;
-    console.log(`🎮 Player HP before update: ${prevHP}, Flash Timer: ${this.player.damageFlashTimer > 0 ? 'FLASHING ⚡' : 'normal'}`);
+    console.log(`🎮 Player HP: ${this.player.currentHP}, Flash Timer: ${this.player.damageFlashTimer > 0 ? 'FLASHING ⚡' : 'normal'}`);
     this.player.update(deltaTime, this.inputManager.inputState, this.canvas.width, this.canvas.height, this.enemies)
-    console.log(`🎮 Player HP after update: ${this.player.currentHP}`);
     
     for (const enemy of this.enemies) {
       enemy.update(deltaTime, this.player)
     }
     
-    // Check for player damage AFTER enemies have updated
-    if (this.player.currentHP < prevHP) {
-      const dmg = prevHP - this.player.currentHP;
-      console.log(`💥 PLAYER DAMAGE DETECTED! Creating damage number: -${dmg} at (${this.player.x}, ${this.player.y - this.player.radius - 20})`);
+    // Process damage events from player
+    const damageEvents = this.player.getDamageEvents()
+    for (const event of damageEvents) {
+      console.log(`💥 PLAYER DAMAGE EVENT! Creating damage number: -${event.amount} at (${this.player.x}, ${this.player.y - this.player.radius - 20})`);
       console.log(`📊 Damage numbers before: ${this.damageNumbers.length}`);
       this.damageNumbers.push(new DamageNumber(
         this.player.x,
         this.player.y - this.player.radius - 20,
-        dmg,
+        event.amount,
         false, // not a crit
-        `-${dmg}`,
+        `-${event.amount}`,
         true // is player damage (red)
       ));
       console.log(`📊 Damage numbers after: ${this.damageNumbers.length}`);
@@ -128,7 +125,6 @@ export class Game {
       ));
     }
     this.lastPlayerLevel = this.player.level;
-    this.lastPlayerHP = this.player.currentHP;
 
     // Remove enemies that have completed their death animation
     this.enemies = this.enemies.filter(enemy => !enemy.isDeathAnimationComplete())

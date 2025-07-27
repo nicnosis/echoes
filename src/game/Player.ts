@@ -42,6 +42,9 @@ export class Player {
   public critChance: number = 5; // percent
   public luck: number = 0;
 
+  // Damage event system
+  private damageEvents: Array<{amount: number, timestamp: number}> = []
+
   constructor(x: number, y: number) {
     this.x = x
     this.y = y
@@ -227,6 +230,10 @@ export class Player {
     this.isInvulnerable = true
     this.invulnerabilityTimer = this.invulnerabilityDuration
     this.damageFlashTimer = this.damageFlashDuration
+    
+    // Queue damage event for damage number display
+    this.damageEvents.push({amount, timestamp: Date.now()})
+    
     console.log(`⚡ Invulnerability started: ${this.invulnerabilityTimer}ms`);
     
     return true
@@ -291,5 +298,12 @@ export class Player {
 
   getPosition() {
     return { x: this.x, y: this.y }
+  }
+
+  // Get and clear damage events for processing
+  getDamageEvents(): Array<{amount: number, timestamp: number}> {
+    const events = [...this.damageEvents]
+    this.damageEvents = []
+    return events
   }
 }
