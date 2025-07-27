@@ -1,11 +1,14 @@
 import { Renderer } from '../render/Renderer'
 import { Player } from './Player'
 
+// Base speed constant for reference (same as Player)
+const BASE_MOVE_SPEED = 100
+
 export class Enemy {
   public x: number
   public y: number
   public radius: number = 12
-  public speed: number = 100
+  public moveSpeed: number = BASE_MOVE_SPEED * 0.8 // Enemies are slightly slower than player
   public health: number = 3
   public maxHealth: number = 15
   private color: string
@@ -61,8 +64,8 @@ export class Enemy {
 
     // Move towards player
     if (distance > 0) {
-      const moveX = (dx / distance) * this.speed * dt
-      const moveY = (dy / distance) * this.speed * dt
+      const moveX = (dx / distance) * this.moveSpeed * dt
+      const moveY = (dy / distance) * this.moveSpeed * dt
       
       this.x += moveX
       this.y += moveY

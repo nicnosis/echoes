@@ -4,11 +4,14 @@ import { Projectile } from './Projectile'
 import { Weapon } from './Weapon'
 import { Enemy } from './Enemy'
 
+// Base speed constant for reference
+const BASE_MOVE_SPEED = 100
+
 export class Player {
   public x: number
   public y: number
   public radius: number = 15
-  public speed: number = 200
+  public baseMoveSpeed: number = BASE_MOVE_SPEED
   
   // Health system
   public maxHP: number = 10
@@ -41,6 +44,7 @@ export class Player {
   public armor: number = 0;
   public critChance: number = 5; // percent
   public luck: number = 0;
+  public moveSpeedStat: number = 0; // Speed stat that modifies base speed
 
   // Damage event system
   private damageEvents: Array<{amount: number, timestamp: number}> = []
@@ -83,8 +87,9 @@ export class Player {
       dy *= 0.707
     }
     
-    // Apply movement with bounds checking
-    const moveSpeed = this.speed * dt
+    // Calculate effective move speed with stat bonus
+    const effectiveMoveSpeed = this.baseMoveSpeed + (this.moveSpeedStat * 0.01)
+    const moveSpeed = effectiveMoveSpeed * dt
     this.x += dx * moveSpeed
     this.y += dy * moveSpeed
     

@@ -373,11 +373,11 @@ export class Game {
     const stats = [
       { icon: '❤️', label: 'Max HP', value: this.player.maxHP },
       { icon: '⚡', label: 'Level', value: this.player.level },
-      { icon: '🏃', label: 'Move Speed', value: 100 },
-      { icon: '💥', label: 'Crit Chance', value: '5%' },
-      { icon: '⚔️', label: 'Attack', value: 10 },
-      { icon: '🛡️', label: 'Armor', value: 0 },
-      { icon: '🍀', label: 'Luck', value: 0 }
+      { icon: '🏃', label: 'Move Speed', value: this.player.baseMoveSpeed + this.player.moveSpeedStat },
+      { icon: '💥', label: 'Crit Chance', value: `${this.player.critChance}%` },
+      { icon: '⚔️', label: 'Attack', value: this.player.attack },
+      { icon: '🛡️', label: 'Armor', value: this.player.armor },
+      { icon: '🍀', label: 'Luck', value: this.player.luck }
     ];
     
     ctx.font = '12px Arial';
