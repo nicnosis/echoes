@@ -4,28 +4,89 @@ import { Projectile } from './Projectile'
 import { Weapon } from './Weapon'
 import { Enemy } from './Enemy'
 
-// Base speed constant for reference
-const BASE_MOVE_SPEED = 100
+// Base stat constants
+const BASE_MOVE_SPEED = 150
+const BASE_MAX_HP = 10
+const BASE_ATTACK = 0
+const BASE_ARMOR = 0
+const BASE_CRIT = 5
+const PERCENT = 0.01
 
 export class Player {
   public x: number
   public y: number
   public radius: number = 15
-  public baseMoveSpeed: number = BASE_MOVE_SPEED
   
-  // Health system
-  public maxHP: number = 10
-  public currentHP: number = 10
+  // Base character stats (never change)
+  private baseStats = {
+    moveSpeed: BASE_MOVE_SPEED,
+    maxHP: BASE_MAX_HP,
+    attack: BASE_ATTACK,
+    armor: BASE_ARMOR,
+    critChance: BASE_CRIT
+  }
   
-  // XP system
+  // Permanent gains from leveling up
+  private levelStats = {
+    moveSpeed: 0,
+    maxHP: 0,
+    attack: 0,
+    armor: 0,
+    critChance: 0
+  }
+  
+  // Cached equipment bonuses (recalculated only when equipment changes)
+  private equipmentStats = {
+    moveSpeed: 0,
+    maxHP: 0,
+    attack: 0,
+    armor: 0,
+    critChance: 0
+  }
+  
+  // Actual cached values (recalculated only when any source changes)
+  public actualStats = {
+    moveSpeed: BASE_MOVE_SPEED,
+    maxHP: BASE_MAX_HP,
+    attack: BASE_ATTACK,
+    armor: BASE_ARMOR,
+    critChance: BASE_CRIT
+  }
+  
+  // Player state structure
+  public playerState = {
+    position: { x: 0, y: 0 },
+    stats: {
+      hp: BASE_MAX_HP,
+      maxHp: BASE_MAX_HP,
+      attack: BASE_ATTACK,
+      defense: BASE_ARMOR,
+      critChance: BASE_CRIT * PERCENT,
+      movementSpeed: BASE_MOVE_SPEED
+    },
+    level: 0,
+    xp: 0,
+    xpToNext: 100,
+    gold: 0,
+    inventory: []
+  }
+  
+  // Legacy properties for compatibility (will be removed)
+  public maxHP: number = BASE_MAX_HP
+  public currentHP: number = BASE_MAX_HP
   public level: number = 0
   public currentXP: number = 0
   public xpToNextLevel: number = 100
+  public gold: number = 0
+  public attack: number = 0
+  public armor: number = 0
+  public critChance: number = 5
+  public moveSpeedStat: number = 0
   
   // Damage system
   public isInvulnerable: boolean = false
   public invulnerabilityTimer: number = 0
-  public invulnerabilityDuration: number = 500 // 1 second of invulnerability
+  public invulnerabilityDuration: number = 500
   
   // Visual effects
   public damageFlashTimer: number = 0
@@ -39,23 +100,26 @@ export class Player {
   
   // Pickup radius
   public pickupRadius: number = 50
-  public gold: number = 0;
-  public attack: number = 0;
-  public armor: number = 0;
-  public critChance: number = 5; // percent
-  public luck: number = 0;
-  public moveSpeedStat: number = 0; // Speed stat that modifies base speed
+  public luck: number = 0
 
   // Damage event system
   private damageEvents: Array<{amount: number, timestamp: number}> = []
+  
+  // Equipment system
+  public equippedItems: any[] = [] // Will be properly typed later
 
   constructor(x: number, y: number) {
     this.x = x
     this.y = y
+    this.playerState.position.x = x
+    this.playerState.position.y = y
     
     // Create dual wands
-    this.weapons.push(new Weapon('wand', 500, 100, 5)) // Weapon range of 50
-    // this.weapons.push(new Weapon('wand', 500, 100, 10))
+    this.weapons.push(new Weapon('wand', 500, 100, 5))
+    
+    // Initialize stats
+    this.recalculateStats()
+    this.syncLegacyProperties()
   }
 
   update(deltaTime: number, inputState: InputState, canvasWidth: number, canvasHeight: number, enemies: Enemy[]) {
@@ -88,7 +152,7 @@ export class Player {
     }
     
     // Calculate effective move speed with stat bonus
-    const effectiveMoveSpeed = this.baseMoveSpeed + (this.moveSpeedStat * 0.01)
+    const effectiveMoveSpeed = this.actualStats.moveSpeed
     const moveSpeed = effectiveMoveSpeed * dt
     this.x += dx * moveSpeed
     this.y += dy * moveSpeed
@@ -96,6 +160,9 @@ export class Player {
     // Keep player in bounds
     this.x = Math.max(this.radius, Math.min(canvasWidth - this.radius, this.x))
     this.y = Math.max(this.radius, Math.min(canvasHeight - this.radius, this.y))
+    
+    // Sync position with player state
+    this.updatePosition()
 
     this.updateWeapons(deltaTime, enemies)
     this.updateProjectiles(deltaTime, canvasWidth, canvasHeight)
@@ -310,5 +377,65 @@ export class Player {
     const events = [...this.damageEvents]
     this.damageEvents = []
     return events
+  }
+
+  // Helper to recalculate all stats
+  private recalculateStats() {
+    this.actualStats.moveSpeed = this.baseStats.moveSpeed + this.levelStats.moveSpeed + this.equipmentStats.moveSpeed
+    this.actualStats.maxHP = this.baseStats.maxHP + this.levelStats.maxHP + this.equipmentStats.maxHP
+    this.actualStats.attack = this.baseStats.attack + this.levelStats.attack + this.equipmentStats.attack
+    this.actualStats.armor = this.baseStats.armor + this.levelStats.armor + this.equipmentStats.armor
+    this.actualStats.critChance = this.baseStats.critChance + this.levelStats.critChance + this.equipmentStats.critChance
+  }
+
+  // Helper to sync legacy properties with new stat system
+  private syncLegacyProperties() {
+    this.maxHP = this.actualStats.maxHP
+    this.currentHP = this.playerState.stats.hp
+    this.level = this.playerState.level
+    this.currentXP = this.playerState.xp
+    this.xpToNextLevel = this.playerState.xpToNext
+    this.gold = this.playerState.gold
+    this.attack = this.actualStats.attack
+    this.armor = this.actualStats.armor
+    this.critChance = this.actualStats.critChance * 100 // Convert to percent
+    this.moveSpeedStat = this.levelStats.moveSpeed // This is the stat that modifies base speed
+  }
+  
+  // Called when equipment changes
+  updateEquipmentStats() {
+    this.equipmentStats = { moveSpeed: 0, maxHP: 0, attack: 0, armor: 0, critChance: 0 }
+    
+    // Sum all equipped items once
+    for (const item of this.equippedItems) {
+      if (item.bonuses) {
+        this.equipmentStats.moveSpeed += item.bonuses.moveSpeed || 0
+        this.equipmentStats.maxHP += item.bonuses.maxHP || 0
+        this.equipmentStats.attack += item.bonuses.attack || 0
+        this.equipmentStats.armor += item.bonuses.armor || 0
+        this.equipmentStats.critChance += item.bonuses.critChance || 0
+      }
+    }
+    
+    this.recalculateStats()
+    this.syncLegacyProperties()
+  }
+  
+  // Called on level up
+  levelUp() {
+    this.levelStats.moveSpeed += 2 // Example level bonus
+    this.levelStats.maxHP += 5
+    this.levelStats.attack += 1
+    this.levelStats.armor += 1
+    this.levelStats.critChance += 1
+    
+    this.recalculateStats()
+    this.syncLegacyProperties()
+  }
+  
+  // Update player state position
+  updatePosition() {
+    this.playerState.position.x = this.x
+    this.playerState.position.y = this.y
   }
 }

@@ -19,7 +19,7 @@ export class Game {
   private somaList: Soma[] = []
   private hud: HUD
   private spawnManager: SpawnManager
-
+  
   private lastPlayerLevel: number;
   private waveIndex: number = 0;
   private waveTimer: number = 0;
@@ -47,6 +47,20 @@ export class Game {
     { wave: 21, duration: 90 }
   ];
   private paused: boolean = false;
+  
+  // Game state structure
+  public gameState = {
+    currentWave: 1,
+    maxWaves: 21,
+    enemies: [] as Enemy[],
+    pickups: [] as Soma[],
+    gamePhase: 'combat' as 'combat' | 'shop' | 'levelup',
+    shopState: {
+      items: [],
+      lockedItems: [],
+      rerollCost: 10
+    }
+  }
 
   constructor(canvas: HTMLCanvasElement) {
     this.canvas = canvas
@@ -373,7 +387,7 @@ export class Game {
     const stats = [
       { icon: '❤️', label: 'Max HP', value: this.player.maxHP },
       { icon: '⚡', label: 'Level', value: this.player.level },
-      { icon: '🏃', label: 'Move Speed', value: this.player.baseMoveSpeed + this.player.moveSpeedStat },
+      { icon: '🏃', label: 'Move Speed', value: this.player.actualStats.moveSpeed },
       { icon: '💥', label: 'Crit Chance', value: `${this.player.critChance}%` },
       { icon: '⚔️', label: 'Attack', value: this.player.attack },
       { icon: '🛡️', label: 'Armor', value: this.player.armor },
