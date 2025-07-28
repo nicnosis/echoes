@@ -79,6 +79,13 @@ export class Game {
         this.paused = !this.paused;
       }
     });
+    
+    // Add mouse click handling for pause screen buttons
+    this.canvas.addEventListener('click', (e) => {
+      if (this.paused) {
+        this.handlePauseScreenClick(e);
+      }
+    });
   }
 
   start() {
@@ -89,6 +96,57 @@ export class Game {
 
   stop() {
     this.running = false
+  }
+
+  restart() {
+    // Reset game state
+    this.player = new Player(this.canvas.width / 2, this.canvas.height / 2)
+    this.enemies = []
+    this.damageNumbers = []
+    this.somaList = []
+    this.lastPlayerLevel = this.player.level
+    this.waveIndex = 0
+    this.waveTimer = this.waveData[0].duration
+    this.paused = false
+    
+    // Reset spawn manager
+    this.spawnManager = new SpawnManager(this.canvas.width, this.canvas.height)
+  }
+
+  private handlePauseScreenClick(e: MouseEvent) {
+    const rect = this.canvas.getBoundingClientRect()
+    const x = e.clientX - rect.left
+    const y = e.clientY - rect.top
+    
+    // Calculate button positions (matching the drawBottomButtons method)
+    const containerWidth = this.canvas.width * 0.95
+    const containerX = (this.canvas.width - containerWidth) / 2
+    const containerY = 70
+    const containerHeight = this.canvas.height - 140
+    const buttonY = containerY + containerHeight - 60
+    
+    const buttonWidth = 120
+    const buttonHeight = 30
+    const buttonSpacing = 20
+    const startX = containerX + 30
+    
+    // Check RESUME button (first button)
+    const resumeX = startX
+    const resumeY = buttonY + (40 - buttonHeight) / 2
+    if (x >= resumeX && x <= resumeX + buttonWidth && 
+        y >= resumeY && y <= resumeY + buttonHeight) {
+      this.paused = false
+      return
+    }
+    
+    // Check RESTART button (second button)
+    const restartX = startX + buttonWidth + buttonSpacing
+    const restartY = buttonY + (40 - buttonHeight) / 2
+    if (x >= restartX && x <= restartX + buttonWidth && 
+        y >= restartY && y <= restartY + buttonHeight) {
+      this.restart()
+      return
+    }
   }
 
   private gameLoop = (currentTime: number) => {

@@ -398,7 +398,7 @@ export class Player {
     this.gold = this.playerState.gold
     this.attack = this.actualStats.attack
     this.armor = this.actualStats.armor
-    this.critChance = this.actualStats.critChance * 100 // Convert to percent
+    this.critChance = this.actualStats.critChance // Don't multiply by 100 - store as percentage directly
     this.moveSpeedStat = this.levelStats.moveSpeed // This is the stat that modifies base speed
   }
   
