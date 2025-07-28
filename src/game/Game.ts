@@ -4,7 +4,7 @@ import { Player } from './Player'
 import { Enemy } from './Enemy'
 import { DamageNumber } from './DamageNumber'
 import { Soma } from './Soma'
-import { HUD } from '../ui/HUD'
+import { HUD } from '../ui/components/HUD'
 import { SpawnManager } from './SpawnManager'
 
 export class Game {
@@ -206,6 +206,9 @@ export class Game {
     this.checkSomaPickup()
     this.updateDamageNumbers(deltaTime)
     
+    // Update HUD
+    this.hud.update(this.player)
+    
     // Use new spawn manager
     const newEnemies = this.spawnManager.update(deltaTime, this.player, this.enemies)
     this.enemies.push(...newEnemies)
@@ -299,7 +302,7 @@ export class Game {
       damageNumber.render(this.renderer)
     }
 
-    this.hud.render(this.renderer, this.player, this.canvas.width, this.canvas.height)
+    // HUD is now handled by HTML/CSS overlay
     
     // Draw wave timer at top center
     if (this.waveIndex < this.waveData.length) {
