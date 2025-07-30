@@ -7,6 +7,7 @@ import { Soma } from './Soma'
 import { HUD } from '../ui/components/HUD'
 import { PauseScreen } from '../ui/components/PauseScreen'
 import { LevelUpScreen, LevelUpChoice } from '../ui/components/LevelUpScreen'
+import { ShopScreen } from '../ui/components/ShopScreen'
 import { SpawnManager } from './SpawnManager'
 
 export class Game {
@@ -22,6 +23,7 @@ export class Game {
   private hud: HUD
   private pauseScreen: PauseScreen
   private levelUpScreen: LevelUpScreen
+  private shopScreen!: ShopScreen
   private spawnManager: SpawnManager
   
   private levelsGained: number = 0;
@@ -29,7 +31,9 @@ export class Game {
   private waveIndex: number = 0;
   private waveTimer: number = 0;
   private levelsToProcess: number = 0;
+  private currentSelection: number = 0;
   private isLevelUpActive: boolean = false;
+  private isShopActive: boolean = false;
   private waveData = [
     { wave: 1, duration: 10 }, //its 20 but i want to test it out
     { wave: 2, duration: 25 },
@@ -77,6 +81,7 @@ export class Game {
     this.hud = new HUD()
     this.pauseScreen = new PauseScreen()
     this.levelUpScreen = new LevelUpScreen()
+    this.shopScreen = new ShopScreen()
     this.spawnManager = new SpawnManager(canvas.width, canvas.height)
     
     // No initial enemies - let the spawn manager handle spawning
@@ -130,11 +135,14 @@ export class Game {
     this.waveTimer = this.waveData[0].duration
     this.paused = false
     this.isLevelUpActive = false
+    this.isShopActive = false
     this.levelsToProcess = 0
+    this.currentSelection = 0
     
     // Hide UI screens
     this.pauseScreen.hide()
     this.levelUpScreen.hide()
+    this.shopScreen.hide()
     
     // Reset spawn manager
     this.spawnManager = new SpawnManager(this.canvas.width, this.canvas.height)
@@ -151,7 +159,7 @@ export class Game {
     const deltaTime = currentTime - this.lastTime
     this.lastTime = currentTime
 
-    if (!this.paused && !this.isLevelUpActive) {
+    if (!this.paused && !this.isLevelUpActive && !this.isShopActive) {
       this.update(deltaTime)
     }
     this.render()
@@ -161,7 +169,7 @@ export class Game {
 
   private update(deltaTime: number) {
     const prevLevel = this.player.level;
-    console.log(`🎮 Player HP: ${this.player.currentHP}, Flash Timer: ${this.player.damageFlashTimer > 0 ? 'FLASHING ⚡' : 'normal'}`);
+    // console.log(`🎮 Player HP: ${this.player.currentHP}, Flash Timer: ${this.player.damageFlashTimer > 0 ? 'FLASHING ⚡' : 'normal'}`);
     this.player.update(deltaTime, this.inputManager.inputState, this.canvas.width, this.canvas.height, this.enemies)
     
     for (const enemy of this.enemies) {
@@ -207,6 +215,12 @@ export class Game {
     // Update HUD
     this.hud.update(this.player)
     
+    // Update shop screen if active
+    if (this.isShopActive) {
+      // console.log(`🎯 Updating shop screen, player stats - Max HP: ${this.player.maxHP}, Level: ${this.player.level}`)
+      this.shopScreen.update(this.player)
+    }
+    
     // Use new spawn manager (only if wave timer hasn't ended)
     if (this.waveTimer > 0) {
       const newEnemies = this.spawnManager.update(deltaTime, this.player, this.enemies)
@@ -217,7 +231,7 @@ export class Game {
     const totalEnemies = this.spawnManager.getCurrentTotalEnemyCount(this.enemies)
     const spawnProb = this.spawnManager.getCurrentSpawnProbability()
     const missedBonus = this.spawnManager.getMissedSpawnBonus()
-    console.log(`🎯 Spawn System: ${totalEnemies} total enemies, ${spawnProb.toFixed(2)} spawn probability, ${missedBonus.toFixed(2)} missed bonus`)
+    // console.log(`🎯 Spawn System: ${totalEnemies} total enemies, ${spawnProb.toFixed(2)} spawn probability, ${missedBonus.toFixed(2)} missed bonus`)
     // Update wave timer and check for wave end
     if (this.waveIndex < this.waveData.length && !this.isLevelUpActive) {
       this.waveTimer -= deltaTime / 1000;
@@ -228,9 +242,9 @@ export class Game {
     }
     
     // Debug: Log player level and XP occasionally
-    if (Math.random() < 0.01) { // ~1% chance per frame
-      console.log(`🎯 Player Level: ${this.player.level}, XP: ${this.player.currentXP}/${this.player.xpToNextLevel}, Levels Gained: ${this.levelsGained}`);
-    }
+    // if (Math.random() < 0.01) { // ~1% chance per frame
+    //   console.log(`🎯 Player Level: ${this.player.level}, XP: ${this.player.currentXP}/${this.player.xpToNextLevel}, Levels Gained: ${this.levelsGained}`);
+    // }
   }
 
   private checkProjectileCollisions() {
@@ -302,7 +316,7 @@ export class Game {
     // Render spawn manager (pre-spawn indicators)
     this.spawnManager.render(this.renderer)
 
-    console.log(`🎯 Rendering ${this.damageNumbers.length} damage numbers this frame`);
+    // console.log(`🎯 Rendering ${this.damageNumbers.length} damage numbers this frame`);
     for (const damageNumber of this.damageNumbers) {
       damageNumber.render(this.renderer)
     }
@@ -329,7 +343,8 @@ export class Game {
 
 
   private dropSoma(x: number, y: number) {
-    const somaCount = 3 + Math.floor(Math.random() * 3) // 3-5 Soma
+    // DEBUG putting soma high right now to test.
+    const somaCount = 20 + Math.floor(Math.random() * 3) // 3-5 Soma
     const angleStep = (Math.PI * 2) / somaCount;
     const baseAngle = Math.random() * Math.PI * 2;
     for (let i = 0; i < somaCount; i++) {
@@ -395,32 +410,51 @@ export class Game {
     if (this.levelsGained > 0) {
       console.log(`🎯 Showing level up screen for ${this.levelsGained} levels`);
       this.levelsToProcess = this.levelsGained;
+      this.currentSelection = 0;
       this.isLevelUpActive = true;
       this.levelUpScreen.show(this.levelsGained, (choice: LevelUpChoice) => {
         this.handleLevelUpChoice(choice);
       }, () => {
-        this.handleContinueToNextWave();
+        this.handleContinueToShop();
       });
     } else {
-      console.log(`🎯 No level ups, going to next wave`);
-      // No level ups, go to next wave
-      this.nextWave();
+      console.log(`🎯 No level ups, going to shop`);
+      // No level ups, go to shop
+      this.showShop();
     }
   }
 
   private handleLevelUpChoice(choice: LevelUpChoice) {
     this.player.levelUpWithChoice(choice.stat);
     this.levelsToProcess--;
+    this.currentSelection++;
     
     if (this.levelsToProcess <= 0) {
-      // All level ups processed, show continue button
-      this.levelUpScreen.showContinueButton();
+      // All level ups processed, auto-proceed to shop
+      this.handleContinueToShop();
+    } else {
+      // Update the title to show current selection progress
+      this.levelUpScreen.updateTitle(this.currentSelection + 1, this.levelsGained);
     }
   }
   
-  private handleContinueToNextWave() {
+  private handleContinueToShop() {
     this.isLevelUpActive = false;
     this.levelUpScreen.hide();
+    this.showShop();
+  }
+
+  private showShop() {
+    console.log(`🎯 Showing shop for wave ${this.waveIndex + 1}`);
+    this.isShopActive = true;
+    this.shopScreen.show(this.waveIndex + 1, () => {
+      this.handleContinueToNextWave();
+    });
+  }
+
+  private handleContinueToNextWave() {
+    this.isShopActive = false;
+    this.shopScreen.hide();
     this.nextWave();
   }
 

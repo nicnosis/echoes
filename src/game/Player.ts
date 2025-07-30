@@ -312,7 +312,7 @@ export class Player {
   }
 
   gainXP(amount: number) {
-    console.log(`🎯 Player gained ${amount} XP! Current: ${this.currentXP}/${this.xpToNextLevel}, Level: ${this.level}`);
+    // console.log(`🎯 Player gained ${amount} XP! Current: ${this.currentXP}/${this.xpToNextLevel}, Level: ${this.level}`);
     this.currentXP += amount
     this.playerState.xp = this.currentXP
     

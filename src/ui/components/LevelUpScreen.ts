@@ -1,4 +1,5 @@
 import { Player } from '../../game/Player'
+import { loadHTMLTemplate, injectTemplate } from '../utils/templateLoader'
 
 export interface LevelUpChoice {
   name: string
@@ -8,11 +9,10 @@ export interface LevelUpChoice {
 }
 
 export class LevelUpScreen {
-  private levelUpOverlay: HTMLElement
-  private levelUpContainer: HTMLElement
-  private choicesContainer: HTMLElement
-  private titleElement: HTMLElement
-  private continueButton: HTMLElement
+  private levelUpOverlay!: HTMLElement
+  private titleElement!: HTMLElement
+  private choicesContainer!: HTMLElement
+  private continueButton!: HTMLElement
   private onChoiceSelected: ((choice: LevelUpChoice) => void) | null = null
   private onContinue: (() => void) | null = null
 
@@ -25,85 +25,54 @@ export class LevelUpScreen {
 
   constructor() {
     console.log(`🎯 LevelUpScreen constructor called`);
-    this.createLevelUpOverlay()
-    this.setupEventListeners()
+    this.initializeLevelUpScreen();
     console.log(`🎯 LevelUpScreen constructor completed`);
   }
 
-  private createLevelUpOverlay() {
-    // Create the overlay element
-    this.levelUpOverlay = document.createElement('div')
-    this.levelUpOverlay.id = 'levelup-overlay'
-    this.levelUpOverlay.className = 'levelup-overlay'
-    
-    // Create the main container
-    this.levelUpContainer = document.createElement('div')
-    this.levelUpContainer.className = 'levelup-container'
-    
-    // Create the title
-    this.titleElement = document.createElement('div')
-    this.titleElement.className = 'levelup-title'
-    this.titleElement.textContent = 'Level Up!'
-    
-    // Create the choices container
-    this.choicesContainer = document.createElement('div')
-    this.choicesContainer.className = 'levelup-choices'
-    
-    // Create choice elements
-    this.levelChoices.forEach(choice => {
-      const choiceElement = this.createChoiceElement(choice)
-      this.choicesContainer.appendChild(choiceElement)
-    })
-    
-    // Create continue button
-    this.continueButton = document.createElement('button')
-    this.continueButton.className = 'levelup-continue-btn'
-    this.continueButton.textContent = 'Continue'
-    this.continueButton.style.display = 'none' // Hidden initially
-    
-    // Assemble the structure
-    this.levelUpContainer.appendChild(this.titleElement)
-    this.levelUpContainer.appendChild(this.choicesContainer)
-    this.levelUpContainer.appendChild(this.continueButton)
-    this.levelUpOverlay.appendChild(this.levelUpContainer)
-    
-    // Add to the UI overlay
-    const uiOverlay = document.getElementById('ui-overlay')
-    if (uiOverlay) {
-      uiOverlay.appendChild(this.levelUpOverlay)
-      console.log(`🎯 Level up overlay added to UI overlay`);
-    } else {
-      console.error(`🎯 Could not find ui-overlay element!`);
-    }
+  private async initializeLevelUpScreen() {
+    await this.createLevelUpOverlay()
+    this.setupEventListeners()
   }
 
-  private createChoiceElement(choice: LevelUpChoice): HTMLElement {
-    const choiceElement = document.createElement('div')
-    choiceElement.className = 'levelup-choice'
-    
-    const emojiElement = document.createElement('div')
-    emojiElement.className = 'choice-emoji'
-    emojiElement.textContent = choice.emoji
-    
-    const nameElement = document.createElement('div')
-    nameElement.className = 'choice-name'
-    nameElement.textContent = choice.name
-    
-    const valueElement = document.createElement('div')
-    valueElement.className = 'choice-value'
-    valueElement.textContent = `+${choice.value}`
-    
-    const selectButton = document.createElement('button')
-    selectButton.className = 'choice-select-btn'
-    selectButton.textContent = 'Select'
-    selectButton.dataset.stat = choice.stat
-    
-    choiceElement.appendChild(emojiElement)
-    choiceElement.appendChild(nameElement)
-    choiceElement.appendChild(valueElement)
-    choiceElement.appendChild(selectButton)
-    
-    return choiceElement
+  private async createLevelUpOverlay() {
+    try {
+      // Load the HTML template
+      const templateHTML = await loadHTMLTemplate('/src/ui/components/LevelUpScreen.html')
+      
+      // Create a temporary container to hold the template
+      const tempContainer = document.createElement('div')
+      injectTemplate(templateHTML, tempContainer)
+      
+      // Get the level up overlay element
+      this.levelUpOverlay = tempContainer.querySelector('#levelup-overlay') as HTMLElement
+      if (!this.levelUpOverlay) {
+        throw new Error('Could not find levelup-overlay element in template')
+      }
+      
+      // Add to the UI overlay first
+      const uiOverlay = document.getElementById('ui-overlay')
+      if (uiOverlay) {
+        uiOverlay.appendChild(this.levelUpOverlay)
+        console.log(`🎯 Level up overlay added to UI overlay`);
+      } else {
+        console.error(`🎯 Could not find ui-overlay element!`);
+        throw new Error('Could not find ui-overlay element')
+      }
+      
+      // Now get references to elements by ID (after they're in the DOM)
+      this.titleElement = document.getElementById('levelup-title') as HTMLElement
+      this.choicesContainer = document.querySelector('.levelup-choices') as HTMLElement
+      this.continueButton = document.getElementById('levelup-continue-btn') as HTMLElement
+      
+      // Verify all elements were found
+      if (!this.titleElement || !this.choicesContainer || !this.continueButton) {
+        throw new Error('Could not find required elements in level up template')
+      }
+      
+    } catch (error) {
+      console.error('Failed to create level up overlay:', error)
+      throw error
+    }
   }
 
   private setupEventListeners() {
@@ -132,15 +101,23 @@ export class LevelUpScreen {
     this.levelUpOverlay.classList.add('active')
     this.continueButton.style.display = 'none' // Hide continue button initially
     
-    // Update title to show how many levels gained
+    // Update title to show selection progress
     if (levelsGained > 1) {
-      this.titleElement.textContent = `Level Up! (+${levelsGained})`
+      this.titleElement.textContent = `Make selection (1/${levelsGained}):`
     } else {
-      this.titleElement.textContent = 'Level Up!'
+      this.titleElement.textContent = 'Make selection:'
     }
     console.log(`🎯 Level up overlay classes: ${this.levelUpOverlay.className}`);
   }
   
+  updateTitle(currentSelection: number, totalSelections: number) {
+    if (totalSelections > 1) {
+      this.titleElement.textContent = `Make selection (${currentSelection}/${totalSelections}):`
+    } else {
+      this.titleElement.textContent = 'Make selection:'
+    }
+  }
+
   showContinueButton() {
     this.continueButton.style.display = 'block'
   }
