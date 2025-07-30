@@ -1,0 +1,177 @@
+/* Level Up Screen Styles */
+.levelup-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.8);
+  display: none;
+  z-index: 30;
+  pointer-events: auto;
+  justify-content: center;
+  align-items: center;
+}
+
+.levelup-overlay.active {
+  display: flex;
+}
+
+/* Main level up container */
+.levelup-container {
+  background: #222;
+  border-radius: 8px;
+  padding: 40px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 30px;
+  min-width: 600px;
+}
+
+/* Title */
+.levelup-title {
+  color: #ffd700;
+  font-size: 32px;
+  font-weight: 700;
+  text-align: center;
+  margin: 0;
+}
+
+/* Choices container - horizontal flexbox */
+.levelup-choices {
+  display: flex;
+  flex-direction: row;
+  gap: 20px;
+  justify-content: center;
+  align-items: stretch;
+}
+
+/* Individual choice element */
+.levelup-choice {
+  background: #333;
+  border-radius: 8px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  min-width: 120px;
+  transition: background-color 0.2s ease;
+}
+
+.levelup-choice:hover {
+  background: #444;
+}
+
+/* Choice emoji */
+.choice-emoji {
+  font-size: 32px;
+  line-height: 1;
+}
+
+/* Choice name */
+.choice-name {
+  color: #fff;
+  font-size: 16px;
+  font-weight: 700;
+  text-align: center;
+  margin: 0;
+}
+
+/* Choice value */
+.choice-value {
+  color: #ffd700;
+  font-size: 18px;
+  font-weight: 700;
+  margin: 0;
+}
+
+/* Select button */
+.choice-select-btn {
+  background: #4a4a4a;
+  border: none;
+  color: #fff;
+  padding: 10px 20px;
+  font-family: 'Lato', Arial, sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: background-color 0.2s ease;
+  width: 100%;
+  margin-top: auto;
+}
+
+.choice-select-btn:hover {
+  background: #5a5a5a;
+}
+
+.choice-select-btn:active {
+  background: #3a3a3a;
+}
+
+/* Continue button */
+.levelup-continue-btn {
+  background: #4a4a4a;
+  border: none;
+  color: #fff;
+  padding: 15px 30px;
+  font-family: 'Lato', Arial, sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: background-color 0.2s ease;
+  margin-top: 20px;
+}
+
+.levelup-continue-btn:hover {
+  background: #5a5a5a;
+}
+
+.levelup-continue-btn:active {
+  background: #3a3a3a;
+}
+
+/* Responsive design */
+@media (max-width: 700px) {
+  .levelup-container {
+    min-width: 90%;
+    padding: 30px 20px;
+  }
+  
+  .levelup-choices {
+    flex-direction: column;
+    gap: 15px;
+  }
+  
+  .levelup-choice {
+    min-width: auto;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 20px;
+  }
+  
+  .choice-emoji {
+    font-size: 24px;
+  }
+  
+  .choice-name {
+    font-size: 14px;
+    flex: 1;
+    text-align: left;
+    margin-left: 15px;
+  }
+  
+  .choice-value {
+    font-size: 16px;
+    margin-right: 15px;
+  }
+  
+  .choice-select-btn {
+    width: auto;
+    margin-top: 0;
+  }
+} 

@@ -312,11 +312,15 @@ export class Player {
   }
 
   gainXP(amount: number) {
+    console.log(`🎯 Player gained ${amount} XP! Current: ${this.currentXP}/${this.xpToNextLevel}, Level: ${this.level}`);
     this.currentXP += amount
+    this.playerState.xp = this.currentXP
     
     while (this.currentXP >= this.xpToNextLevel) {
       this.currentXP -= this.xpToNextLevel
       this.level++
+      this.playerState.level = this.level
+      console.log(`🎯 LEVEL UP! New level: ${this.level}`);
       // XP requirement could scale here if needed
     }
   }
@@ -423,11 +427,26 @@ export class Player {
   
   // Called on level up
   levelUp() {
-    this.levelStats.moveSpeed += 2 // Example level bonus
-    this.levelStats.maxHP += 5
-    this.levelStats.attack += 1
-    this.levelStats.armor += 1
-    this.levelStats.critChance += 1
+    // This is now handled by levelUpWithChoice
+    console.warn('levelUp() called directly - use levelUpWithChoice instead')
+  }
+  
+  // New method for handling level up choices
+  levelUpWithChoice(stat: 'maxHP' | 'attack' | 'armor' | 'moveSpeed') {
+    switch (stat) {
+      case 'maxHP':
+        this.levelStats.maxHP += 2
+        break
+      case 'attack':
+        this.levelStats.attack += 2
+        break
+      case 'armor':
+        this.levelStats.armor += 2
+        break
+      case 'moveSpeed':
+        this.levelStats.moveSpeed += 5
+        break
+    }
     
     this.recalculateStats()
     this.syncLegacyProperties()

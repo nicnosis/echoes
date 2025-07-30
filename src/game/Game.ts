@@ -6,6 +6,7 @@ import { DamageNumber } from './DamageNumber'
 import { Soma } from './Soma'
 import { HUD } from '../ui/components/HUD'
 import { PauseScreen } from '../ui/components/PauseScreen'
+import { LevelUpScreen, LevelUpChoice } from '../ui/components/LevelUpScreen'
 import { SpawnManager } from './SpawnManager'
 
 export class Game {
@@ -20,13 +21,17 @@ export class Game {
   private somaList: Soma[] = []
   private hud: HUD
   private pauseScreen: PauseScreen
+  private levelUpScreen: LevelUpScreen
   private spawnManager: SpawnManager
   
-  private lastPlayerLevel: number;
+  private levelsGained: number = 0;
+  private waveStartLevel: number = 0;
   private waveIndex: number = 0;
   private waveTimer: number = 0;
+  private levelsToProcess: number = 0;
+  private isLevelUpActive: boolean = false;
   private waveData = [
-    { wave: 1, duration: 20 },
+    { wave: 1, duration: 10 }, //its 20 but i want to test it out
     { wave: 2, duration: 25 },
     { wave: 3, duration: 30 },
     { wave: 4, duration: 35 },
@@ -71,12 +76,16 @@ export class Game {
     this.player = new Player(canvas.width / 2, canvas.height / 2)
     this.hud = new HUD()
     this.pauseScreen = new PauseScreen()
+    this.levelUpScreen = new LevelUpScreen()
     this.spawnManager = new SpawnManager(canvas.width, canvas.height)
     
     // No initial enemies - let the spawn manager handle spawning
-    this.lastPlayerLevel = this.player.level;
+    this.levelsGained = 0;
     this.waveIndex = 0;
     this.waveTimer = this.waveData[0].duration;
+    
+    // Start first wave
+    this.startWave();
     window.addEventListener('keydown', (e) => {
       if (e.code === 'Escape') {
         this.togglePause();
@@ -115,16 +124,23 @@ export class Game {
     this.enemies = []
     this.damageNumbers = []
     this.somaList = []
-    this.lastPlayerLevel = this.player.level
+    this.levelsGained = 0
+    this.waveStartLevel = 0
     this.waveIndex = 0
     this.waveTimer = this.waveData[0].duration
     this.paused = false
+    this.isLevelUpActive = false
+    this.levelsToProcess = 0
     
-    // Hide pause screen
+    // Hide UI screens
     this.pauseScreen.hide()
+    this.levelUpScreen.hide()
     
     // Reset spawn manager
     this.spawnManager = new SpawnManager(this.canvas.width, this.canvas.height)
+    
+    // Start first wave
+    this.startWave()
   }
 
 
@@ -135,7 +151,7 @@ export class Game {
     const deltaTime = currentTime - this.lastTime
     this.lastTime = currentTime
 
-    if (!this.paused) {
+    if (!this.paused && !this.isLevelUpActive) {
       this.update(deltaTime)
     }
     this.render()
@@ -167,7 +183,10 @@ export class Game {
       ));
       console.log(`📊 Damage numbers after: ${this.damageNumbers.length}`);
     }
-    if (this.player.level > this.lastPlayerLevel) {
+    // Check if player leveled up this frame
+    const currentLevel = this.player.level;
+    if (currentLevel > this.waveStartLevel + this.levelsGained) {
+      this.levelsGained++;
       this.damageNumbers.push(new DamageNumber(
         this.player.x,
         this.player.y - this.player.radius - 30,
@@ -176,7 +195,6 @@ export class Game {
         'Level Up!'
       ));
     }
-    this.lastPlayerLevel = this.player.level;
 
     // Remove enemies that have completed their death animation
     this.enemies = this.enemies.filter(enemy => !enemy.isDeathAnimationComplete())
@@ -189,22 +207,29 @@ export class Game {
     // Update HUD
     this.hud.update(this.player)
     
-    // Use new spawn manager
-    const newEnemies = this.spawnManager.update(deltaTime, this.player, this.enemies)
-    this.enemies.push(...newEnemies)
+    // Use new spawn manager (only if wave timer hasn't ended)
+    if (this.waveTimer > 0) {
+      const newEnemies = this.spawnManager.update(deltaTime, this.player, this.enemies)
+      this.enemies.push(...newEnemies)
+    }
     
     // Debug logging for spawn system
     const totalEnemies = this.spawnManager.getCurrentTotalEnemyCount(this.enemies)
     const spawnProb = this.spawnManager.getCurrentSpawnProbability()
     const missedBonus = this.spawnManager.getMissedSpawnBonus()
     console.log(`🎯 Spawn System: ${totalEnemies} total enemies, ${spawnProb.toFixed(2)} spawn probability, ${missedBonus.toFixed(2)} missed bonus`)
-    // Update wave timer
-    if (this.waveIndex < this.waveData.length) {
+    // Update wave timer and check for wave end
+    if (this.waveIndex < this.waveData.length && !this.isLevelUpActive) {
       this.waveTimer -= deltaTime / 1000;
       if (this.waveTimer < 0) {
         this.waveTimer = 0;
-        // For now, do nothing when timer reaches zero
       }
+      this.checkWaveEnd();
+    }
+    
+    // Debug: Log player level and XP occasionally
+    if (Math.random() < 0.01) { // ~1% chance per frame
+      console.log(`🎯 Player Level: ${this.player.level}, XP: ${this.player.currentXP}/${this.player.xpToNextLevel}, Levels Gained: ${this.levelsGained}`);
     }
   }
 
@@ -353,5 +378,67 @@ export class Game {
     }
   }
 
+  // Wave management methods
+  private startWave() {
+    if (this.waveIndex < this.waveData.length) {
+      this.waveStartLevel = this.player.level;
+      this.levelsGained = 0;
+      this.waveTimer = this.waveData[this.waveIndex].duration;
+      // SpawnManager handles spawning automatically, no need to call startWave
+    }
+  }
 
+  private endWave() {
+    // Check for level ups
+    console.log(`🎯 Wave ended! Player level: ${this.player.level}, Levels gained: ${this.levelsGained}`);
+    
+    if (this.levelsGained > 0) {
+      console.log(`🎯 Showing level up screen for ${this.levelsGained} levels`);
+      this.levelsToProcess = this.levelsGained;
+      this.isLevelUpActive = true;
+      this.levelUpScreen.show(this.levelsGained, (choice: LevelUpChoice) => {
+        this.handleLevelUpChoice(choice);
+      }, () => {
+        this.handleContinueToNextWave();
+      });
+    } else {
+      console.log(`🎯 No level ups, going to next wave`);
+      // No level ups, go to next wave
+      this.nextWave();
+    }
+  }
+
+  private handleLevelUpChoice(choice: LevelUpChoice) {
+    this.player.levelUpWithChoice(choice.stat);
+    this.levelsToProcess--;
+    
+    if (this.levelsToProcess <= 0) {
+      // All level ups processed, show continue button
+      this.levelUpScreen.showContinueButton();
+    }
+  }
+  
+  private handleContinueToNextWave() {
+    this.isLevelUpActive = false;
+    this.levelUpScreen.hide();
+    this.nextWave();
+  }
+
+  private nextWave() {
+    this.waveIndex++;
+    if (this.waveIndex < this.waveData.length) {
+      this.startWave();
+    } else {
+      // Game completed
+      console.log('Game completed!');
+      this.stop();
+    }
+  }
+
+  // Check if wave should end
+  private checkWaveEnd() {
+    if (this.waveTimer <= 0) {
+      this.endWave();
+    }
+  }
 }

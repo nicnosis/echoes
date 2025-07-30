@@ -12,6 +12,7 @@ Echoes is a 2D top-down transformation roguelike built with TypeScript and HTML5
 - **Build Tool**: Vite
 - **Package Manager**: npm
 - **Rendering**: Hybrid approach - Canvas for game world, HTML/CSS for UI
+- For testing, I will launch `npm run dev` and look at the game on localhost:3000 or whichever port it ends up being. Please don't ask to run anything to launch the game; assume I have it open and just tell me to test.
 
 ## Game Design & Mechanics
 
