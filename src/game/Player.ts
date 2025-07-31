@@ -262,9 +262,9 @@ export class Player {
   }
 
   takeDamage(amount: number = 1): boolean {
-    console.log(`⚔️  Player.takeDamage called! Amount: ${amount}, Current HP: ${this.currentHP}, Invulnerable: ${this.isInvulnerable}`);
+    // console.log(`⚔️  Player.takeDamage called! Amount: ${amount}, Current HP: ${this.currentHP}, Invulnerable: ${this.isInvulnerable}`);
     if (this.isInvulnerable) {
-      console.log(`🛡️ Damage blocked by invulnerability! Remaining: ${this.invulnerabilityTimer}ms`);
+    //   console.log(`🛡️ Damage blocked by invulnerability! Remaining: ${this.invulnerabilityTimer}ms`);
       return false
     }
     
@@ -277,7 +277,7 @@ export class Player {
     // Queue damage event for damage number display
     this.damageEvents.push({amount, timestamp: Date.now()})
     
-    console.log(`⚡ Invulnerability started: ${this.invulnerabilityTimer}ms`);
+    // console.log(`⚡ Invulnerability started: ${this.invulnerabilityTimer}ms`);
     
     return true
   }
