@@ -291,6 +291,7 @@ export class Player {
             console.log(`🎯 LEVEL UP! New level: ${this.level}`);
             // XP requirement could scale here if needed
         }
+        // TODO: Call game.updateAllStats() after level up when implemented
     }
 
     gainGold(amount: number) {
@@ -377,17 +378,11 @@ export class Player {
         }
 
         this.recalculateStats()
+        // TODO: Call game.updateAllStats() after equipment changes when implemented
     }
 
-    // Called on level up
-    levelUp() {
-        // This is now handled by levelUpWithChoice
-        console.warn('levelUp() called directly - use levelUpWithChoice instead')
-    }
-
-    //@TODO this is a horrible name for a method. selectLevelUpBonus() would be better.
-    // New method for handling level up choices
-    levelUpWithChoice(stat: 'maxHP' | 'attack' | 'armor' | 'moveSpeed') {
+    // handle level up choices
+    selectLevelUpBonus(stat: 'maxHP' | 'attack' | 'armor' | 'moveSpeed') {
         switch (stat) {
             case 'maxHP':
                 this.levelStats.maxHP += 2
@@ -404,6 +399,7 @@ export class Player {
         }
 
         this.recalculateStats()
+        // TODO: Call game.updateAllStats() after stat changes when implemented
     }
 
     // Get clean stats for display - the single source of truth for UI

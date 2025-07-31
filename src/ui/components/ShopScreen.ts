@@ -11,6 +11,8 @@ export class ShopScreen {
     private statsPanel!: StatsPanel
     private onContinue: (() => void) | null = null
 
+    private initialized = false
+
     constructor() {
         // console.log(`🎯 ShopScreen constructor called`)
         this.initializeShopScreen()
@@ -20,6 +22,7 @@ export class ShopScreen {
     private async initializeShopScreen() {
         await this.createShopOverlay()
         this.setupEventListeners()
+        this.initialized = true
     }
 
     private async createShopOverlay() {
@@ -59,10 +62,10 @@ export class ShopScreen {
                 throw new Error('Could not find shop-stats container')
             }
 
-            // Clear the existing stats content and load the new StatsPanel
-            shopStatsContainer.innerHTML = ''
-            this.statsPanel = new StatsPanel(shopStatsContainer)
-            await this.statsPanel.load()
+            // Get StatsPanel instance and register this container
+            this.statsPanel = StatsPanel.getInstance()
+            await this.statsPanel.initialize()
+            this.statsPanel.registerContainer(shopStatsContainer)
 
             console.log(`🎯 StatsPanel loaded in shop stats container`)
 
@@ -90,8 +93,17 @@ export class ShopScreen {
         })
     }
 
-    show(waveNumber: number, onContinue: () => void) {
+    async show(waveNumber: number, onContinue: () => void) {
         console.log(`🎯 ShopScreen.show() called for wave ${waveNumber}`)
+        
+        // Wait for initialization to complete if needed
+        if (!this.initialized) {
+            console.log(`🎯 Waiting for ShopScreen initialization...`)
+            while (!this.initialized) {
+                await new Promise(resolve => setTimeout(resolve, 10))
+            }
+        }
+        
         this.onContinue = onContinue
         this.shopOverlay.classList.add('active')
 

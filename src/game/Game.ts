@@ -8,6 +8,7 @@ import { HUD } from '../ui/components/HUD'
 import { PauseScreen } from '../ui/components/PauseScreen'
 import { LevelUpScreen, LevelUpChoice } from '../ui/components/LevelUpScreen'
 import { ShopScreen } from '../ui/components/ShopScreen'
+import { StatsPanel } from '../ui/components/StatsPanel'
 import { SpawnManager } from './SpawnManager'
 
 export class Game {
@@ -25,6 +26,7 @@ export class Game {
     private levelUpScreen: LevelUpScreen
     private shopScreen!: ShopScreen
     private spawnManager: SpawnManager
+    private statsPanel: StatsPanel
 
     private levelsGained: number = 0;
     private waveStartLevel: number = 0;
@@ -34,9 +36,18 @@ export class Game {
     private currentSelection: number = 0;
     private isLevelUpActive: boolean = false;
     private isShopActive: boolean = false;
+    
+    // ===== DEBUG KEY HOLD TIMERS =====
+    // Hold "q" for 1500ms to restart game, hold "f" for 1500ms to end current wave
+    private qKeyHoldTimer: number = 0;
+    private fKeyHoldTimer: number = 0;
+    private qKeyHeld: boolean = false;
+    private fKeyHeld: boolean = false;
+    private readonly KEY_HOLD_DURATION: number = 800; // 0.8 seconds
+   
     private waveData = [
         { wave: 1, duration: 10 }, //its 20 but i want to test it out
-        { wave: 2, duration: 25 },
+        { wave: 2, duration: 10 }, //its 25 but i want to test it out
         { wave: 3, duration: 30 },
         { wave: 4, duration: 35 },
         { wave: 5, duration: 40 },
@@ -82,6 +93,7 @@ export class Game {
         this.pauseScreen = new PauseScreen()
         this.levelUpScreen = new LevelUpScreen()
         this.shopScreen = new ShopScreen()
+        this.statsPanel = StatsPanel.getInstance()
         this.spawnManager = new SpawnManager(canvas.width, canvas.height)
 
         // No initial enemies - let the spawn manager handle spawning
@@ -94,6 +106,34 @@ export class Game {
         window.addEventListener('keydown', (e) => {
             if (e.code === 'Escape') {
                 this.togglePause();
+            }
+            
+            // ===== DEBUG KEY HOLD DETECTION =====
+            // Start hold timers for "q" and "f" keys
+            if (e.code === 'KeyQ' && !this.qKeyHeld) {
+                this.qKeyHeld = true;
+                this.qKeyHoldTimer = 0;
+                console.log('Q key pressed - hold timer started');
+            }
+            if (e.code === 'KeyE' && !this.fKeyHeld) {
+                this.fKeyHeld = true;
+                this.fKeyHoldTimer = 0;
+                console.log('E key pressed - hold timer started');
+            }
+            // Debug: log all key presses to see what's happening
+            console.log('Key pressed:', e.code);
+        });
+        
+        window.addEventListener('keyup', (e) => {
+            // ===== DEBUG KEY HOLD RESET =====
+            // Reset hold timers when keys are released
+            if (e.code === 'KeyQ') {
+                this.qKeyHeld = false;
+                this.qKeyHoldTimer = 0;
+            }
+            if (e.code === 'KeyE') {
+                this.fKeyHeld = false;
+                this.fKeyHoldTimer = 0;
             }
         });
 
@@ -142,6 +182,8 @@ export class Game {
         if (this.paused) {
             //   console.log('⏸️ Game paused');
             this.pauseScreen.show();
+            // Update stats when showing pause screen
+            this.updateAllStats()
             this.pauseScreen.update(this.player);
         } else {
             //   console.log('▶️ Game resumed');
@@ -200,6 +242,30 @@ export class Game {
     }
 
     private update(deltaTime: number) {
+        // ===== DEBUG KEY HOLD TIMER UPDATES =====
+        // Update hold timers and trigger actions when duration is reached
+        // Only allow debug keys during combat phase (not during shop, level up, or pause)
+        if (!this.isShopActive && !this.isLevelUpActive && !this.paused) {
+            if (this.qKeyHeld) {
+                this.qKeyHoldTimer += deltaTime;
+                if (this.qKeyHoldTimer >= this.KEY_HOLD_DURATION) {
+                    console.log('Q key held for 800ms - restarting game');
+                    this.restart(); // Hold "q" for 800ms to restart game
+                    this.qKeyHeld = false;
+                    this.qKeyHoldTimer = 0;
+                }
+            }
+            if (this.fKeyHeld) {
+                this.fKeyHoldTimer += deltaTime;
+                if (this.fKeyHoldTimer >= this.KEY_HOLD_DURATION) {
+                    console.log('F key held for 800ms - ending wave');
+                    this.waveTimer = 0; // Force wave to end immediately
+                    this.fKeyHeld = false;
+                    this.fKeyHoldTimer = 0;
+                }
+            }
+        }
+        
         const prevLevel = this.player.level;
         // console.log(`🎮 Player HP: ${this.player.currentHP}, Flash Timer: ${this.player.damageFlashTimer > 0 ? 'FLASHING ⚡' : 'normal'}`);
         this.player.update(deltaTime, this.inputManager.inputState, this.canvas.width, this.canvas.height, this.enemies)
@@ -251,6 +317,7 @@ export class Game {
         if (this.isShopActive) {
             // console.log(`🎯 Updating shop screen, player stats - Max HP: ${this.player.maxHP}, Level: ${this.player.level}`)
             this.shopScreen.update(this.player)
+            // TODO: Add this.updateAllStats() after each shop purchase when implemented
         }
 
         // Update pause screen if active (continuously while paused)
@@ -375,7 +442,7 @@ export class Game {
 
     private dropSoma(x: number, y: number) {
         // DEBUG putting soma high right now to test.
-        const somaCount = 20 + Math.floor(Math.random() * 3) // 3-5 Soma
+        const somaCount = 50 + Math.floor(Math.random() * 3) // 3-5 Soma
         const angleStep = (Math.PI * 2) / somaCount;
         const baseAngle = Math.random() * Math.PI * 2;
         for (let i = 0; i < somaCount; i++) {
@@ -431,10 +498,16 @@ export class Game {
             this.levelsGained = 0;
             this.waveTimer = this.waveData[this.waveIndex].duration;
             // SpawnManager handles spawning automatically, no need to call startWave
+            
+            // Update stats at start of wave
+            this.updateAllStats()
         }
     }
 
     private async endWave() {
+        // Update stats at end of wave
+        this.updateAllStats()
+        
         // Check for level ups
         console.log(`🎯 Wave ended! Player level: ${this.player.level}, Levels gained: ${this.levelsGained}`);
 
@@ -456,9 +529,12 @@ export class Game {
     }
 
     private handleLevelUpChoice(choice: LevelUpChoice) {
-        this.player.levelUpWithChoice(choice.stat);
+        this.player.selectLevelUpBonus(choice.stat);
         this.levelsToProcess--;
         this.currentSelection++;
+
+        // Update stats after level up choice
+        this.updateAllStats()
 
         if (this.levelsToProcess <= 0) {
             // All level ups processed, auto-proceed to shop
@@ -478,6 +554,10 @@ export class Game {
     private async showShop() {
         console.log(`🎯 Showing shop for wave ${this.waveIndex + 1}`);
         this.isShopActive = true;
+        
+        // Update stats at beginning of shop
+        this.updateAllStats()
+        
         await this.shopScreen.show(this.waveIndex + 1, () => {
             this.handleContinueToNextWave();
         });
@@ -498,6 +578,11 @@ export class Game {
             console.log('Game completed!');
             this.stop();
         }
+    }
+
+    // Helper method to update all stats displays
+    private updateAllStats() {
+        this.statsPanel.update(this.player)
     }
 
     // Check if wave should end
