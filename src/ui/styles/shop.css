@@ -1,302 +1,266 @@
-/* Shop Screen Styles */
+/* Shop Screen Styles - FIXED NON-RESPONSIVE */
 .shop-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.8);
-  display: none;
-  z-index: 30;
-  pointer-events: auto;
-  justify-content: center;
-  align-items: center;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.8);
+    display: none;
+    z-index: 30;
+    pointer-events: auto;
+    justify-content: center;
+    align-items: center;
 }
 
 .shop-overlay.active {
-  display: flex;
+    display: flex;
 }
 
-/* Main shop container - horizontal flex */
+/* Main shop container - horizontal flex - FIXED DIMENSIONS */
 .shop-container {
-  width: 95%;
-  height: 85%;
-  background: #222;
-  border: 2px solid #444;
-  border-radius: 8px;
-  display: flex;
-  flex-direction: row;
-  gap: 20px;
-  padding: 20px;
+    width: 100%;
+    height: 100%;
+    background: #222;
+    border: 2px solid #444;
+    border-radius: 8px;
+    display: flex;
+    flex-direction: row;
+    gap: 20px;
+    padding: 20px;
 }
 
 /* Left 2/3: Main shop area */
 .shop-main {
-  flex: 2;
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
+    flex: 2;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
 }
 
 /* Shop header */
 .shop-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 10px 0;
-  border-bottom: 1px solid #444;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px solid #444;
 }
 
 .shop-title {
-  color: #ffd700;
-  font-size: 24px;
-  font-weight: 700;
-  margin: 0;
+    color: #ffd700;
+    font-size: 24px;
+    font-weight: 700;
+    margin: 0;
 }
 
 .shop-gold {
-  color: #fff;
-  font-size: 18px;
-  font-weight: 700;
-  margin: 0;
+    color: #fff;
+    font-size: 18px;
+    font-weight: 700;
+    margin: 0;
 }
 
 .shop-reroll-btn {
-  background: #4a4a4a;
-  border: none;
-  color: #fff;
-  padding: 8px 16px;
-  font-family: 'Lato', Arial, sans-serif;
-  font-size: 14px;
-  font-weight: 700;
-  cursor: pointer;
-  border-radius: 4px;
-  transition: background-color 0.2s ease;
+    background: #4a4a4a;
+    border: none;
+    color: #fff;
+    padding: 8px 16px;
+    font-family: 'Lato', Arial, sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: background-color 0.2s ease;
 }
 
 .shop-reroll-btn:hover {
-  background: #5a5a5a;
+    background: #5a5a5a;
 }
 
 .shop-reroll-btn:active {
-  background: #3a3a3a;
+    background: #3a3a3a;
 }
 
 /* Shop choices - horizontal flex */
 .shop-choices {
-  display: flex;
-  flex-direction: row;
-  gap: 15px;
-  justify-content: center;
-  align-items: stretch;
+    display: flex;
+    flex-direction: row;
+    gap: 15px;
+    justify-content: center;
+    align-items: stretch;
 }
 
 .shop-choice-slot {
-  background: #333;
-  border: 2px solid #555;
-  border-radius: 8px;
-  padding: 20px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #888;
-  font-size: 16px;
-  min-width: 120px;
-  min-height: 100px;
-  transition: background-color 0.2s ease;
+    background: #333;
+    border: 2px solid #555;
+    border-radius: 8px;
+    padding: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #888;
+    font-size: 16px;
+    min-width: 120px;
+    min-height: 100px;
+    transition: background-color 0.2s ease;
 }
 
 .shop-choice-slot:hover {
-  background: #444;
-  border-color: #666;
+    background: #444;
+    border-color: #666;
 }
 
 /* Shop gear section - horizontal flex */
 .shop-gear {
-  display: flex;
-  flex-direction: row;
-  gap: 20px;
-  flex: 1;
+    display: flex;
+    flex-direction: row;
+    gap: 20px;
+    flex: 1;
 }
 
 /* Current items (flex 4) */
 .current-items {
-  flex: 4;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
+    flex: 4;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
 }
 
 .items-title {
-  color: #fff;
-  font-size: 18px;
-  font-weight: 700;
-  margin: 0;
+    color: #fff;
+    font-size: 18px;
+    font-weight: 700;
+    margin: 0;
 }
 
 .items-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  grid-template-rows: repeat(3, 1fr);
-  gap: 8px;
-  flex: 1;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    grid-template-rows: repeat(3, 1fr);
+    gap: 8px;
+    flex: 1;
 }
 
 .item-cell {
-  background: #333;
-  border: 2px solid #555;
-  border-radius: 4px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #888;
-  font-size: 12px;
-  min-height: 40px;
+    background: #333;
+    border: 2px solid #555;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #888;
+    font-size: 12px;
+    min-height: 40px;
 }
 
 /* Current weapons (flex 1) */
 .current-weapons {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
 }
 
 .weapons-title {
-  color: #fff;
-  font-size: 18px;
-  font-weight: 700;
-  margin: 0;
+    color: #fff;
+    font-size: 18px;
+    font-weight: 700;
+    margin: 0;
 }
 
 .weapons-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  grid-template-rows: repeat(3, 1fr);
-  gap: 8px;
-  flex: 1;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    grid-template-rows: repeat(3, 1fr);
+    gap: 8px;
+    flex: 1;
 }
 
 .weapon-cell {
-  background: #333;
-  border: 2px solid #555;
-  border-radius: 4px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #888;
-  font-size: 12px;
-  min-height: 40px;
+    background: #333;
+    border: 2px solid #555;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #888;
+    font-size: 12px;
+    min-height: 40px;
 }
 
 /* Right 1/3: Stats and continue button */
 .shop-stats {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
 }
 
 /* Stats panel - reuse existing styles */
 .stats-panel {
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
-  padding: 5px;
-  flex: 1;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    padding: 5px;
+    flex: 1;
 }
 
 .stats-title {
-  color: #fff;
-  font-size: 18px;
-  font-weight: 700;
-  margin-bottom: 10px;
+    color: #fff;
+    font-size: 18px;
+    font-weight: 700;
+    margin-bottom: 10px;
 }
 
 .stat-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 8px 12px;
-  background: #333;
-  border-radius: 4px;
-  color: #fff;
-  font-size: 14px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 12px;
+    background: #333;
+    border-radius: 4px;
+    color: #fff;
+    font-size: 14px;
 }
 
 .stat-label {
-  font-weight: 400;
+    font-weight: 400;
 }
 
 .stat-value {
-  font-weight: 700;
-  color: #ffd700;
+    font-weight: 700;
+    color: #ffd700;
 }
 
 /* Continue button section */
 .shop-continue {
-  display: flex;
-  justify-content: flex-end;
-  padding-top: 20px;
+    display: flex;
+    justify-content: flex-end;
+    padding-top: 20px;
 }
 
 .shop-continue-btn {
-  background: #4a4a4a;
-  border: none;
-  color: #fff;
-  padding: 15px 30px;
-  font-family: 'Lato', Arial, sans-serif;
-  font-size: 16px;
-  font-weight: 700;
-  cursor: pointer;
-  border-radius: 4px;
-  transition: background-color 0.2s ease;
+    background: #4a4a4a;
+    border: none;
+    color: #fff;
+    padding: 15px 30px;
+    font-family: 'Lato', Arial, sans-serif;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: background-color 0.2s ease;
 }
 
 .shop-continue-btn:hover {
-  background: #5a5a5a;
+    background: #5a5a5a;
 }
 
 .shop-continue-btn:active {
-  background: #3a3a3a;
+    background: #3a3a3a;
 }
 
-/* Responsive design */
-@media (max-width: 1000px) {
-  .shop-container {
-    flex-direction: column;
-    height: auto;
-    max-height: 90%;
-  }
-  
-  .shop-main {
-    flex: none;
-  }
-  
-  .shop-stats {
-    flex: none;
-    height: 300px;
-  }
-  
-  .shop-choices {
-    flex-wrap: wrap;
-  }
-  
-  .shop-choice-slot {
-    min-width: 100px;
-    min-height: 80px;
-  }
-  
-  .shop-gear {
-    flex-direction: column;
-  }
-  
-  .current-items {
-    flex: none;
-  }
-  
-  .current-weapons {
-    flex: none;
-  }
-} 
+/* NO RESPONSIVE DESIGN - FIXED LAYOUT ONLY */
+/* All responsive media queries removed to prevent layout changes when DevTools opens */
