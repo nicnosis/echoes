@@ -10,6 +10,7 @@ import { LevelUpScreen, LevelUpChoice } from '../ui/components/LevelUpScreen'
 import { ShopScreen } from '../ui/components/ShopScreen'
 import { StatsPanel } from '../ui/components/StatsPanel'
 import { SpawnManager } from './SpawnManager'
+import { DebugSystem } from '../utils/Debug'
 
 export class Game {
     private canvas: HTMLCanvasElement
@@ -27,6 +28,7 @@ export class Game {
     private shopScreen!: ShopScreen
     private spawnManager: SpawnManager
     private statsPanel: StatsPanel
+    private debugSystem: DebugSystem
 
     private levelsGained: number = 0;
     private waveStartLevel: number = 0;
@@ -36,14 +38,6 @@ export class Game {
     private currentSelection: number = 0;
     private isLevelUpActive: boolean = false;
     private isShopActive: boolean = false;
-    
-    // ===== DEBUG KEY HOLD TIMERS =====
-    // Hold "q" for 1500ms to restart game, hold "f" for 1500ms to end current wave
-    private qKeyHoldTimer: number = 0;
-    private fKeyHoldTimer: number = 0;
-    private qKeyHeld: boolean = false;
-    private fKeyHeld: boolean = false;
-    private readonly KEY_HOLD_DURATION: number = 800; // 0.8 seconds
    
     private waveData = [
         { wave: 1, duration: 10 }, //its 20 but i want to test it out
@@ -95,6 +89,15 @@ export class Game {
         this.shopScreen = new ShopScreen()
         this.statsPanel = StatsPanel.getInstance()
         this.spawnManager = new SpawnManager(canvas.width, canvas.height)
+        this.debugSystem = new DebugSystem()
+        
+        // ===== DEBUG SYSTEM INITIALIZATION =====
+        // Initialize debug system with callbacks and global variables
+        this.debugSystem.initialize(
+            () => this.restart(), // Q key callback
+            () => { this.waveTimer = 0; } // E key callback
+        );
+        this.debugSystem.setupGlobalDebug(this.player, this);
 
         // No initial enemies - let the spawn manager handle spawning
         this.levelsGained = 0;
@@ -106,34 +109,6 @@ export class Game {
         window.addEventListener('keydown', (e) => {
             if (e.code === 'Escape') {
                 this.togglePause();
-            }
-            
-            // ===== DEBUG KEY HOLD DETECTION =====
-            // Start hold timers for "q" and "f" keys
-            if (e.code === 'KeyQ' && !this.qKeyHeld) {
-                this.qKeyHeld = true;
-                this.qKeyHoldTimer = 0;
-                console.log('Q key pressed - hold timer started');
-            }
-            if (e.code === 'KeyE' && !this.fKeyHeld) {
-                this.fKeyHeld = true;
-                this.fKeyHoldTimer = 0;
-                console.log('E key pressed - hold timer started');
-            }
-            // Debug: log all key presses to see what's happening
-            console.log('Key pressed:', e.code);
-        });
-        
-        window.addEventListener('keyup', (e) => {
-            // ===== DEBUG KEY HOLD RESET =====
-            // Reset hold timers when keys are released
-            if (e.code === 'KeyQ') {
-                this.qKeyHeld = false;
-                this.qKeyHoldTimer = 0;
-            }
-            if (e.code === 'KeyE') {
-                this.fKeyHeld = false;
-                this.fKeyHoldTimer = 0;
             }
         });
 
@@ -216,10 +191,7 @@ export class Game {
         this.spawnManager = new SpawnManager(this.canvas.width, this.canvas.height)
 
         // Update global debug variables with new instances
-        if ((window as any).myPlayer) {
-            (window as any).myPlayer = this.player;
-            (window as any).myEnemies = this.enemies;
-        }
+        this.debugSystem.setupGlobalDebug(this.player, this);
 
         // Start first wave
         this.startWave()
@@ -242,29 +214,10 @@ export class Game {
     }
 
     private update(deltaTime: number) {
-        // ===== DEBUG KEY HOLD TIMER UPDATES =====
-        // Update hold timers and trigger actions when duration is reached
-        // Only allow debug keys during combat phase (not during shop, level up, or pause)
-        if (!this.isShopActive && !this.isLevelUpActive && !this.paused) {
-            if (this.qKeyHeld) {
-                this.qKeyHoldTimer += deltaTime;
-                if (this.qKeyHoldTimer >= this.KEY_HOLD_DURATION) {
-                    console.log('Q key held for 800ms - restarting game');
-                    this.restart(); // Hold "q" for 800ms to restart game
-                    this.qKeyHeld = false;
-                    this.qKeyHoldTimer = 0;
-                }
-            }
-            if (this.fKeyHeld) {
-                this.fKeyHoldTimer += deltaTime;
-                if (this.fKeyHoldTimer >= this.KEY_HOLD_DURATION) {
-                    console.log('F key held for 800ms - ending wave');
-                    this.waveTimer = 0; // Force wave to end immediately
-                    this.fKeyHeld = false;
-                    this.fKeyHoldTimer = 0;
-                }
-            }
-        }
+        // ===== DEBUG SYSTEM UPDATE =====
+        // Update debug system with current game state
+        const isCombatPhase = !this.isShopActive && !this.isLevelUpActive && !this.paused;
+        this.debugSystem.update(deltaTime, isCombatPhase);
         
         const prevLevel = this.player.level;
         // console.log(`🎮 Player HP: ${this.player.currentHP}, Flash Timer: ${this.player.damageFlashTimer > 0 ? 'FLASHING ⚡' : 'normal'}`);
