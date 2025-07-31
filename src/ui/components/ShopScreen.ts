@@ -1,5 +1,6 @@
 import { Player } from '../../game/Player'
 import { loadHTMLTemplate, injectTemplate } from '../utils/templateLoader'
+import { StatsPanel } from './StatsPanel'
 
 export class ShopScreen {
   private shopOverlay!: HTMLElement
@@ -7,7 +8,7 @@ export class ShopScreen {
   private shopGold!: HTMLElement
   private rerollButton!: HTMLElement
   private continueButton!: HTMLElement
-  private statElements: { [key: string]: HTMLElement } = {}
+  private statsPanel!: StatsPanel
   private onContinue: (() => void) | null = null
 
   constructor() {
@@ -52,32 +53,22 @@ export class ShopScreen {
       this.rerollButton = document.getElementById('shop-reroll-btn') as HTMLElement
       this.continueButton = document.getElementById('shop-continue-btn') as HTMLElement
       
-      // Get specific stat value elements from within the shop stats section
-      this.statElements = {
-        maxHP: document.querySelector('#shop-stats .stat-item.maxHP .stat-value') as HTMLElement,
-        level: document.querySelector('#shop-stats .stat-item.level .stat-value') as HTMLElement,
-        moveSpeed: document.querySelector('#shop-stats .stat-item.moveSpeed .stat-value') as HTMLElement,
-        critChance: document.querySelector('#shop-stats .stat-item.critChance .stat-value') as HTMLElement,
-        attack: document.querySelector('#shop-stats .stat-item.attack .stat-value') as HTMLElement,
-        armor: document.querySelector('#shop-stats .stat-item.armor .stat-value') as HTMLElement,
-        luck: document.querySelector('#shop-stats .stat-item.luck .stat-value') as HTMLElement
+      // Initialize StatsPanel component with the shop-stats container
+      const shopStatsContainer = document.getElementById('shop-stats') as HTMLElement
+      if (!shopStatsContainer) {
+        throw new Error('Could not find shop-stats container')
       }
       
-      console.log(`🎯 Found ${Object.keys(this.statElements).length} stat elements in shop stats`)
+      // Clear the existing stats content and load the new StatsPanel
+      shopStatsContainer.innerHTML = ''
+      this.statsPanel = new StatsPanel(shopStatsContainer)
+      await this.statsPanel.load()
       
-      // Debug: Check if shop-stats element exists
-      const shopStatsElement = document.getElementById('shop-stats')
-      console.log(`🎯 Shop stats element found:`, shopStatsElement)
+      console.log(`🎯 StatsPanel loaded in shop stats container`)
       
       // Verify all elements were found
       if (!this.shopTitle || !this.shopGold || !this.rerollButton || !this.continueButton) {
         throw new Error('Could not find required elements in shop template')
-      }
-      
-      // Verify stat elements were found
-      const missingStats = Object.entries(this.statElements).filter(([key, element]) => !element)
-      if (missingStats.length > 0) {
-        console.warn(`🎯 Missing stat elements: ${missingStats.map(([key]) => key).join(', ')}`)
       }
       
     } catch (error) {
@@ -116,36 +107,10 @@ export class ShopScreen {
     // Update gold/soma
     this.shopGold.textContent = `Soma: ${player.gold}`
     
-    // Update each stat element directly
-    if (this.statElements.maxHP) {
-      this.statElements.maxHP.textContent = player.maxHP.toString()
-    }
+    // Update stats using the StatsPanel component
+    this.statsPanel.update(player)
     
-    if (this.statElements.level) {
-      this.statElements.level.textContent = player.level.toString()
-    }
-    
-    if (this.statElements.moveSpeed) {
-      this.statElements.moveSpeed.textContent = player.actualStats.moveSpeed.toString()
-    }
-    
-    if (this.statElements.critChance) {
-      this.statElements.critChance.textContent = `${player.critChance}%`
-    }
-    
-    if (this.statElements.attack) {
-      this.statElements.attack.textContent = player.attack.toString()
-    }
-    
-    if (this.statElements.armor) {
-      this.statElements.armor.textContent = player.armor.toString()
-    }
-    
-    if (this.statElements.luck) {
-      this.statElements.luck.textContent = player.luck.toString()
-    }
-    
-    console.log(`🎯 Shop stats updated - Max HP: ${player.maxHP}, Level: ${player.level}`)
+    console.log(`🎯 Shop stats updated via StatsPanel`)
   }
 
   hide() {

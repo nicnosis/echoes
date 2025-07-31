@@ -1,9 +1,10 @@
 import { Player } from '../../game/Player'
+import { StatsPanel } from './StatsPanel'
 
 export class PauseScreen {
   private pauseOverlay: HTMLElement
   private weaponSlots: HTMLElement[]
-  private statItems: HTMLElement[]
+  private statsPanel: StatsPanel
   private resumeBtn: HTMLElement
   private restartBtn: HTMLElement
   private mainMenuBtn: HTMLElement
@@ -18,8 +19,16 @@ export class PauseScreen {
     // Get weapon slots
     this.weaponSlots = Array.from(document.querySelectorAll('.weapon-slot'))
     
-    // Get stat items
-    this.statItems = Array.from(document.querySelectorAll('.stat-item'))
+    // Initialize StatsPanel with the stats section container
+    const statsContainer = document.querySelector('.pause.stats-panel')! as HTMLElement
+    if (!statsContainer) {
+      throw new Error('Stats section not found in pause overlay')
+    }
+    
+    // Clear existing content and create StatsPanel
+    statsContainer.innerHTML = ''
+    this.statsPanel = new StatsPanel(statsContainer)
+    this.initializeStatsPanel()
 
     // Verify elements exist
     if (!this.pauseOverlay || !this.resumeBtn || !this.restartBtn || !this.mainMenuBtn) {
@@ -28,6 +37,14 @@ export class PauseScreen {
 
     // Set up event listeners
     this.setupEventListeners()
+  }
+  
+  private async initializeStatsPanel() {
+    try {
+      await this.statsPanel.load()
+    } catch (error) {
+      console.error('Failed to initialize StatsPanel in PauseScreen:', error)
+    }
   }
 
   private setupEventListeners() {
@@ -79,29 +96,7 @@ export class PauseScreen {
   }
 
   private updateStats(player: Player) {
-    const stats = [
-      { label: 'Max HP', value: player.maxHP },
-      { label: 'Level', value: player.level },
-      { label: 'Move Speed', value: player.actualStats.moveSpeed },
-      { label: 'Crit Chance', value: `${player.critChance}%` },
-      { label: 'Attack', value: player.attack },
-      { label: 'Armor', value: player.armor },
-      { label: 'Luck', value: player.luck }
-    ]
-
-    // Update each stat item
-    this.statItems.forEach((item, index) => {
-      if (index < stats.length) {
-        const stat = stats[index]
-        const label = item.querySelector('.stat-label') as HTMLElement
-        const value = item.querySelector('.stat-value') as HTMLElement
-        
-        if (label && value) {
-          label.textContent = stat.label
-          value.textContent = stat.value.toString()
-        }
-      }
-    })
+    this.statsPanel.update(player)
   }
 
   isVisible(): boolean {

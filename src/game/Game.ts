@@ -114,11 +114,19 @@ export class Game {
   }
 
   togglePause() {
+    // Only allow pause during active combat (not during shop, level up, or other screens)
+    if (this.isShopActive || this.isLevelUpActive) {
+      console.log('⏸️ Pause blocked: not in combat state');
+      return;
+    }
+    
     this.paused = !this.paused;
     if (this.paused) {
+    //   console.log('⏸️ Game paused');
       this.pauseScreen.show();
       this.pauseScreen.update(this.player);
     } else {
+    //   console.log('▶️ Game resumed');
       this.pauseScreen.hide();
     }
   }
@@ -179,8 +187,8 @@ export class Game {
     // Process damage events from player
     const damageEvents = this.player.getDamageEvents()
     for (const event of damageEvents) {
-      console.log(`💥 PLAYER DAMAGE EVENT! Creating damage number: -${event.amount} at (${this.player.x}, ${this.player.y - this.player.radius - 20})`);
-      console.log(`📊 Damage numbers before: ${this.damageNumbers.length}`);
+    //   console.log(`💥 PLAYER DAMAGE EVENT! Creating damage number: -${event.amount} at (${this.player.x}, ${this.player.y - this.player.radius - 20})`);
+    //   console.log(`📊 Damage numbers before: ${this.damageNumbers.length}`);
       this.damageNumbers.push(new DamageNumber(
         this.player.x,
         this.player.y - this.player.radius - 20,
@@ -221,6 +229,11 @@ export class Game {
       this.shopScreen.update(this.player)
     }
     
+    // Update pause screen if active (continuously while paused)
+    if (this.paused) {
+      this.pauseScreen.update(this.player)
+    }
+    
     // Use new spawn manager (only if wave timer hasn't ended)
     if (this.waveTimer > 0) {
       const newEnemies = this.spawnManager.update(deltaTime, this.player, this.enemies)
@@ -241,10 +254,6 @@ export class Game {
       this.checkWaveEnd();
     }
     
-    // Debug: Log player level and XP occasionally
-    // if (Math.random() < 0.01) { // ~1% chance per frame
-    //   console.log(`🎯 Player Level: ${this.player.level}, XP: ${this.player.currentXP}/${this.player.xpToNextLevel}, Levels Gained: ${this.levelsGained}`);
-    // }
   }
 
   private checkProjectileCollisions() {
@@ -320,8 +329,6 @@ export class Game {
     for (const damageNumber of this.damageNumbers) {
       damageNumber.render(this.renderer)
     }
-
-    // HUD is now handled by HTML/CSS overlay
     
     // Draw wave timer at top center
     if (this.waveIndex < this.waveData.length) {
@@ -403,7 +410,7 @@ export class Game {
     }
   }
 
-  private endWave() {
+  private async endWave() {
     // Check for level ups
     console.log(`🎯 Wave ended! Player level: ${this.player.level}, Levels gained: ${this.levelsGained}`);
     
@@ -420,7 +427,7 @@ export class Game {
     } else {
       console.log(`🎯 No level ups, going to shop`);
       // No level ups, go to shop
-      this.showShop();
+      await this.showShop();
     }
   }
 
@@ -438,16 +445,16 @@ export class Game {
     }
   }
   
-  private handleContinueToShop() {
+  private async handleContinueToShop() {
     this.isLevelUpActive = false;
     this.levelUpScreen.hide();
-    this.showShop();
+    await this.showShop();
   }
 
-  private showShop() {
+  private async showShop() {
     console.log(`🎯 Showing shop for wave ${this.waveIndex + 1}`);
     this.isShopActive = true;
-    this.shopScreen.show(this.waveIndex + 1, () => {
+    await this.shopScreen.show(this.waveIndex + 1, () => {
       this.handleContinueToNextWave();
     });
   }

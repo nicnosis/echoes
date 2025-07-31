@@ -53,35 +53,13 @@ export class Player {
     critChance: BASE_CRIT
   }
   
-  // Player state structure
-  public playerState = {
-    position: { x: 0, y: 0 },
-    stats: {
-      hp: BASE_MAX_HP,
-      maxHp: BASE_MAX_HP,
-      attack: BASE_ATTACK,
-      defense: BASE_ARMOR,
-      critChance: BASE_CRIT * PERCENT,
-      movementSpeed: BASE_MOVE_SPEED
-    },
-    level: 0,
-    xp: 0,
-    xpToNext: 100,
-    gold: 0,
-    inventory: []
-  }
-  
-  // Legacy properties for compatibility (will be removed)
-  public maxHP: number = BASE_MAX_HP
+  // Clean player state - no duplicates!
   public currentHP: number = BASE_MAX_HP
   public level: number = 0
   public currentXP: number = 0
   public xpToNextLevel: number = 100
   public gold: number = 0
-  public attack: number = 0
-  public armor: number = 0
-  public critChance: number = 5
-  public moveSpeedStat: number = 0
+  public luck: number = 0
   
   // Damage system
   public isInvulnerable: boolean = false
@@ -100,7 +78,6 @@ export class Player {
   
   // Pickup radius
   public pickupRadius: number = 50
-  public luck: number = 0
 
   // Damage event system
   private damageEvents: Array<{amount: number, timestamp: number}> = []
@@ -111,15 +88,12 @@ export class Player {
   constructor(x: number, y: number) {
     this.x = x
     this.y = y
-    this.playerState.position.x = x
-    this.playerState.position.y = y
     
     // Create dual wands
     this.weapons.push(new Weapon('wand', 500, 100, 5))
     
     // Initialize stats
     this.recalculateStats()
-    this.syncLegacyProperties()
   }
 
   update(deltaTime: number, inputState: InputState, canvasWidth: number, canvasHeight: number, enemies: Enemy[]) {
@@ -161,9 +135,6 @@ export class Player {
     this.x = Math.max(this.radius, Math.min(canvasWidth - this.radius, this.x))
     this.y = Math.max(this.radius, Math.min(canvasHeight - this.radius, this.y))
     
-    // Sync position with player state
-    this.updatePosition()
-
     this.updateWeapons(deltaTime, enemies)
     this.updateProjectiles(deltaTime, canvasWidth, canvasHeight)
   }
@@ -312,21 +283,18 @@ export class Player {
   }
 
   gainXP(amount: number) {
-    // console.log(`🎯 Player gained ${amount} XP! Current: ${this.currentXP}/${this.xpToNextLevel}, Level: ${this.level}`);
     this.currentXP += amount
-    this.playerState.xp = this.currentXP
     
     while (this.currentXP >= this.xpToNextLevel) {
       this.currentXP -= this.xpToNextLevel
       this.level++
-      this.playerState.level = this.level
       console.log(`🎯 LEVEL UP! New level: ${this.level}`);
       // XP requirement could scale here if needed
     }
   }
 
   gainGold(amount: number) {
-    this.gold += amount;
+    this.gold += amount
   }
 
   getColor(): string {
@@ -392,19 +360,6 @@ export class Player {
     this.actualStats.critChance = this.baseStats.critChance + this.levelStats.critChance + this.equipmentStats.critChance
   }
 
-  // Helper to sync legacy properties with new stat system
-  private syncLegacyProperties() {
-    this.maxHP = this.actualStats.maxHP
-    this.currentHP = this.playerState.stats.hp
-    this.level = this.playerState.level
-    this.currentXP = this.playerState.xp
-    this.xpToNextLevel = this.playerState.xpToNext
-    this.gold = this.playerState.gold
-    this.attack = this.actualStats.attack
-    this.armor = this.actualStats.armor
-    this.critChance = this.actualStats.critChance // Don't multiply by 100 - store as percentage directly
-    this.moveSpeedStat = this.levelStats.moveSpeed // This is the stat that modifies base speed
-  }
   
   // Called when equipment changes
   updateEquipmentStats() {
@@ -422,7 +377,6 @@ export class Player {
     }
     
     this.recalculateStats()
-    this.syncLegacyProperties()
   }
   
   // Called on level up
@@ -431,6 +385,7 @@ export class Player {
     console.warn('levelUp() called directly - use levelUpWithChoice instead')
   }
   
+  //@TODO this is a horrible name for a method. selectLevelUpBonus() would be better.
   // New method for handling level up choices
   levelUpWithChoice(stat: 'maxHP' | 'attack' | 'armor' | 'moveSpeed') {
     switch (stat) {
@@ -449,12 +404,32 @@ export class Player {
     }
     
     this.recalculateStats()
-    this.syncLegacyProperties()
   }
   
-  // Update player state position
-  updatePosition() {
-    this.playerState.position.x = this.x
-    this.playerState.position.y = this.y
+  // Get clean stats for display - the single source of truth for UI
+  getDisplayStats() {
+    return {
+      maxHP: this.actualStats.maxHP,
+      currentHP: this.currentHP,
+      level: this.level,
+      moveSpeed: this.actualStats.moveSpeed,
+      critChance: this.actualStats.critChance,
+      attack: this.actualStats.attack,
+      armor: this.actualStats.armor,
+      luck: this.luck,
+      // XP info
+      currentXP: this.currentXP,
+      xpToNextLevel: this.xpToNextLevel,
+      xpPercentage: this.getXPPercentage(),
+      // Gold
+      gold: this.gold
+    }
   }
+
+  // Helper properties for backwards compatibility (if needed temporarily)
+  get maxHP() { return this.actualStats.maxHP }
+  get attack() { return this.actualStats.attack }
+  get armor() { return this.actualStats.armor }
+  get critChance() { return this.actualStats.critChance }
+  get moveSpeedStat() { return this.levelStats.moveSpeed }
 }
