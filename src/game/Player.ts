@@ -59,7 +59,6 @@ export class Player {
     public currentXP: number = 0
     public xpToNextLevel: number = 100
     public gold: number = 0
-    public luck: number = 0
 
     // Damage system
     public isInvulnerable: boolean = false
@@ -412,7 +411,6 @@ export class Player {
             critChance: this.actualStats.critChance,
             attack: this.actualStats.attack,
             armor: this.actualStats.armor,
-            luck: this.luck,
             // XP info
             currentXP: this.currentXP,
             xpToNextLevel: this.xpToNextLevel,

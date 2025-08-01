@@ -57,7 +57,6 @@ You can access these properties directly on `myPlayer`:
 - `armor` - Armor value
 - `moveSpeed` - Movement speed
 - `critChance` - Critical hit chance
-- `luck` - Luck stat
 - `gold` - Gold amount
 - `currentXP` - Current experience points
 - `xpToNextLevel` - XP needed for next level
