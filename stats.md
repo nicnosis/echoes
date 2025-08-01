@@ -13,13 +13,24 @@ The role of our stats manager and how we approach stats. (I will also have anoth
 - Hierarchy including primary and secondary e.g.
   - player.stats.p will store Primary Stats. These are the core stats that help a player grow (e.g. maxHP, moveSpeed, meleeDmg)
   - player.stats.s will store Secondary Stats. These are supportive stats such as an increase in pickup radius.
-  - player.stats.res (short for resources) will store Level, current XP, XP to next level, and Soma
+  - It will be broken down further for primary and secondary:
+    - baseStats: the amount that the player starts with
+    - levelUpStats: stat increases from Level Up selections
+    - gearStats: stat increases from items/equipment
+    - totalStats: calculated sum of stats from base amount, from level up, and from gear
+  - player.stats.game (other core stats) will store Level, current XP, XP to next level, and Soma
+      - hp (current hp)
+      - xp (current amount)
+      - xp for next level (cumulative amount necessary to reach next level)
+      - soma (currency; dropped when enemies die)
+
+### → SET DEFAULT STATS at the start of the game
 
 ### → XP
 
 - Eventually, I will have a table of experience points necessary to progress.
 
-### → SET DEFAULT STATS at the start of the game
+
 
 ### → LEVEL UP
 
