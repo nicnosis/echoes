@@ -116,8 +116,8 @@ export class ShopScreen {
 
     update(player: Player) {
         console.log(`🎯 Shop update called - Player Max HP: ${player.stats.getMaxHP()}, Level: ${player.stats.level}`)
-        // Update gold/soma
-        this.shopGold.textContent = `Soma: ${player.gold || 0}`
+        // Update soma
+        this.shopGold.textContent = `Soma: ${player.stats.total.soma || 0}`
 
         // Update stats using the StatsPanel component
         this.statsPanel.update(player)

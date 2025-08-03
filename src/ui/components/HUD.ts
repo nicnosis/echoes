@@ -45,7 +45,7 @@ export class HUD {
     // Update level and gold
     const level = player.stats.level
     this.levelText.textContent = `Lv ${level}`
-    this.goldText.textContent = `Gold: ${player.gold || 0}`
+            this.goldText.textContent = `Soma: ${player.stats.total.soma || 0}`
   }
 
   // Method to show/hide HUD (for future use)

@@ -5,7 +5,6 @@ export class Soma {
     public y: number
     public radius: number = 10
     public somaValue: number
-    public goldValue: number
     public collected: boolean = false
 
     private floatOffset: number = 0
@@ -24,7 +23,7 @@ export class Soma {
     private scatterDuration: number = 300 // 300ms
     private scattering: boolean = false
 
-    constructor(x: number, y: number, somaValue: number = 1, goldValue: number = 1, targetX?: number, targetY?: number) {
+    constructor(x: number, y: number, somaValue: number = 1, targetX?: number, targetY?: number) {
         this.startX = x
         this.startY = y
         this.x = x
@@ -32,7 +31,6 @@ export class Soma {
         this.targetX = targetX || x
         this.targetY = targetY || y
         this.somaValue = somaValue
-        this.goldValue = goldValue
         this.floatOffset = Math.random() * Math.PI * 2
         // Assign static appearance
         this.aspect = 1 + Math.random() // 1 to 2
@@ -97,11 +95,11 @@ export class Soma {
         return distance <= pickupRadius
     }
 
-    collect(): { soma: number, gold: number } {
-        if (this.collected) return { soma: 0, gold: 0 }
+    collect(): { soma: number } {
+        if (this.collected) return { soma: 0 }
 
         this.collected = true
-        return { soma: this.somaValue, gold: this.goldValue }
+        return { soma: this.somaValue }
     }
 
     getBounds() {

@@ -221,10 +221,7 @@ export class Player {
         return false
     }
 
-    gainGold(amount: number) {
-        // Gold is now handled through stats if needed, or can be separate
-        // For now, keeping it simple
-    }
+
 
     getColor(): string {
         // Color based on elemental stats
@@ -297,6 +294,7 @@ export class Player {
     }
     get level() { return this.stats.level }
     get xp() { return this.stats.xp }
+    get soma() { return this.stats.total.soma || 0 }
 
     // Level up bonus selection
     selectLevelUpBonus(stat: 'maxHP' | 'damage' | 'armor' | 'moveSpeed') {

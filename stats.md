@@ -9,6 +9,17 @@ The role of our stats manager and how we approach stats. (I will also have anoth
 - I think it might make sense to manage the stats in a table especially given the number of fields. It will be easier to drag them around, reorder etc.
 
 ### → STORE STATS
+- There are three categories of stats:
+    - Primary stats such as moveSpeed and armor,
+    - Secondary stats (not implemented yet; leave blank)
+    - Core stats: 
+        - XP
+        - Level
+        - hp (current HP, not max)
+        - Soma (amount of currency available)
+        - These core stats do not have multiple layers (e.g. there is no bonus to them from gear or level ups etc.)   
+        - These should be stored directly in player.stats
+
 - Eventually we will have the StatsPanel with two buttons (primary and secondary) so we can click through to see which set we want to look at.
 - These are the composite parts:
     - base: the amount that the player starts with
@@ -54,7 +65,7 @@ The `stats.csv` file defines the structure and properties of all player statisti
 
 ### **category** (string)
 - **Purpose**: Groups stats into logical categories
-- **Values**: `primary` (core combat/character stats), `secondary` (supportive stats)
+- **Values**: `primary` (combat/character stats), `secondary` (supportive stats)
 - **Usage**: Determines how stats are organized and displayed in the UI
 
 ### **order** (integer)

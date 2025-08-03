@@ -404,8 +404,8 @@ export class Game {
             const distance = 20 + Math.random() * 10;
             const targetX = x + Math.cos(angle) * distance;
             const targetY = y + Math.sin(angle) * distance;
-            // Create Soma with scatter animation from center to target position
-            this.somaList.push(new Soma(x, y, 1, 1, targetX, targetY));
+                            // Create Soma with scatter animation from center to target position
+                this.somaList.push(new Soma(x, y, 1, targetX, targetY));
         }
     }
 
@@ -436,12 +436,14 @@ export class Game {
             const dy = soma.y - this.player.y;
             const distance = Math.sqrt(dx * dx + dy * dy);
             if (!soma.collected && distance <= 8) { // 8px threshold for center
-                const { soma: somaValue, gold } = soma.collect();
+                const { soma: somaValue } = soma.collect();
                 const leveledUp = this.player.gainXP(somaValue);
                 if (leveledUp) {
                     this.levelsGained++;
                 }
-                this.player.gainGold(gold);
+                // Increment soma currency (core stat)
+                const currentSoma = this.player.stats.getStat('soma') || 0;
+                this.player.stats.setBaseStat('soma', currentSoma + somaValue);
                 this.somaList.splice(i, 1);
             }
         }
