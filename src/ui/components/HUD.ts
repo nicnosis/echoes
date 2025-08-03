@@ -31,9 +31,11 @@ export class HUD {
 
   update(player: Player) {
     // Update health bar
-    const healthPercent = Math.max(0, (player.currentHP / player.maxHP) * 100)
+    const currentHP = player.stats.getCurrentHP()
+    const maxHP = player.stats.getMaxHP()
+    const healthPercent = Math.max(0, (currentHP / maxHP) * 100)
     this.healthFill.style.width = `${healthPercent}%`
-    this.healthText.textContent = `${player.currentHP}/${player.maxHP}`
+    this.healthText.textContent = `${Math.floor(currentHP)}/${maxHP}`
 
     // Update XP bar
     const xpPercent = player.getXPPercentage()
@@ -41,8 +43,9 @@ export class HUD {
     this.xpText.textContent = `${Math.floor(xpPercent)}%`
 
     // Update level and gold
-    this.levelText.textContent = `Lv ${player.level}`
-    this.goldText.textContent = `Gold: ${player.gold}`
+    const level = player.stats.level
+    this.levelText.textContent = `Lv ${level}`
+    this.goldText.textContent = `Gold: ${player.gold || 0}`
   }
 
   // Method to show/hide HUD (for future use)

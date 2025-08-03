@@ -1,9 +1,9 @@
 category,order,key,displayName,hideInStatsPanel,description,isPercent,baseValue,minValue,maxValue
-primary,0,level,Level,,Current player level,,1,0,
-primary,1,xp,XP,TRUE,Total accumulated experience points,,0,,
+core,0,level,Level,,Current player level,,0,0,
+core,1,xp,XP,TRUE,Total accumulated experience points,,0,,
 primary,2,maxHP,Max HP,,Maximum HP,,10,,
-primary,3,hp,HP,TRUE,Current HP,,10,,
-primary,4,hpRegen,HP Regneration,,HP regeneration,,5,,
+core,3,hp,HP,TRUE,Current HP,,10,,
+primary,4,hpRegen,HP Regeneration,,HP regeneration,,5,,
 primary,5,lifeSteal,Lifesteal,,Determines lifesteal chance on enemies,,0,,
 primary,6,damage,Damage,,Percent damage increase,TRUE,0,,
 primary,7,red,Red,,Red element,,0,,

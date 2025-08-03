@@ -43,4 +43,10 @@ export class Projectile {
             height: this.size
         }
     }
+
+    isDead(): boolean {
+        // Projectiles are dead when they go off screen or hit something
+        // This will be set by collision detection
+        return false
+    }
 }

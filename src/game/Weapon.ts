@@ -26,7 +26,7 @@ export class Weapon {
         return Math.min(1, this.lastFireTime / this.cooldown)
     }
 
-    fire(playerX: number, playerY: number, targetX: number, targetY: number): Projectile | null {
+    fire(playerX: number, playerY: number, targetX: number, targetY: number, damage?: number): Projectile | null {
         if (!this.canFire()) {
             return null
         }
@@ -45,6 +45,9 @@ export class Weapon {
         const velocityX = (dx / distance) * projectileSpeed
         const velocityY = (dy / distance) * projectileSpeed
 
+        // Use provided damage or fall back to weapon's base damage
+        const finalDamage = damage || this.damage
+
         // Create a wand projectile (white square)
         const projectile = new Projectile(
             playerX,
@@ -52,7 +55,7 @@ export class Weapon {
             velocityX,
             velocityY,
             5, // Size
-            this.damage,
+            finalDamage,
             '#ffffff'
         )
 

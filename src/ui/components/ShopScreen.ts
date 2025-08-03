@@ -62,10 +62,10 @@ export class ShopScreen {
                 throw new Error('Could not find shop-stats container')
             }
 
-            // Get StatsPanel instance and register this container
+            // Get StatsPanel instance and register this container as master
             this.statsPanel = StatsPanel.getInstance()
             await this.statsPanel.initialize()
-            this.statsPanel.registerContainer(shopStatsContainer)
+            this.statsPanel.registerContainer(shopStatsContainer, true) // Register as master
 
             console.log(`🎯 StatsPanel loaded in shop stats container`)
 
@@ -115,9 +115,9 @@ export class ShopScreen {
     }
 
     update(player: Player) {
-        console.log(`🎯 Shop update called - Player Max HP: ${player.maxHP}, Level: ${player.level}`)
+        console.log(`🎯 Shop update called - Player Max HP: ${player.stats.getMaxHP()}, Level: ${player.stats.level}`)
         // Update gold/soma
-        this.shopGold.textContent = `Soma: ${player.gold}`
+        this.shopGold.textContent = `Soma: ${player.gold || 0}`
 
         // Update stats using the StatsPanel component
         this.statsPanel.update(player)

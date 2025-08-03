@@ -17,6 +17,8 @@ export class Enemy {
     private deathDuration: number = 400 // 500ms death animation
     private originalRadius: number = 12
     private originalColor: string
+    private lastDamageTime: number = 0
+    private damageCooldown: number = 1000 // 1 second cooldown between damage
 
     constructor(x: number, y: number) {
         this.x = x
@@ -72,10 +74,10 @@ export class Enemy {
         }
 
         // Check collision with player
-        this.checkPlayerCollision(player)
+        this.checkPlayerCollision(player, deltaTime)
     }
 
-    private checkPlayerCollision(player: Player) {
+    private checkPlayerCollision(player: Player, deltaTime: number) {
         if (this.dying) return // Can't damage player while dying
 
         const dx = this.x - player.x
@@ -83,7 +85,12 @@ export class Enemy {
         const distance = Math.sqrt(dx * dx + dy * dy)
 
         if (distance < this.radius + player.radius) {
-            player.takeDamage(1)
+            // Check damage cooldown
+            const currentTime = Date.now()
+            if (currentTime - this.lastDamageTime >= this.damageCooldown) {
+                player.takeDamage(1)
+                this.lastDamageTime = currentTime
+            }
         }
     }
 

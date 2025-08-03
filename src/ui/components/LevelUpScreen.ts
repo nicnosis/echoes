@@ -4,7 +4,7 @@ import { loadHTMLTemplate, injectTemplate } from '../utils/templateLoader'
 export interface LevelUpChoice {
     name: string
     emoji: string
-    stat: 'maxHP' | 'attack' | 'armor' | 'moveSpeed'
+    stat: 'maxHP' | 'damage' | 'armor' | 'moveSpeed'
     value: number
 }
 
@@ -17,9 +17,9 @@ export class LevelUpScreen {
     private onContinue: (() => void) | null = null
 
     private levelChoices: LevelUpChoice[] = [
-        { name: 'Max HP', emoji: '❤️', stat: 'maxHP', value: 2 },
-        { name: 'Attack', emoji: '⚔️', stat: 'attack', value: 2 },
-        { name: 'Armor', emoji: '🛡️', stat: 'armor', value: 2 },
+        { name: 'Max HP', emoji: '❤️', stat: 'maxHP', value: 5 },
+        { name: 'Damage', emoji: '⚔️', stat: 'damage', value: 5 },
+        { name: 'Armor', emoji: '🛡️', stat: 'armor', value: 5 },
         { name: 'Move Speed', emoji: '🏃', stat: 'moveSpeed', value: 5 }
     ]
 
@@ -79,7 +79,7 @@ export class LevelUpScreen {
         this.choicesContainer.addEventListener('click', (e) => {
             const target = e.target as HTMLElement
             if (target.classList.contains('choice-select-btn')) {
-                const stat = target.dataset.stat as 'maxHP' | 'attack' | 'armor' | 'moveSpeed'
+                const stat = target.dataset.stat as 'maxHP' | 'damage' | 'armor' | 'moveSpeed'
                 const choice = this.levelChoices.find(c => c.stat === stat)
                 if (choice && this.onChoiceSelected) {
                     this.onChoiceSelected(choice)

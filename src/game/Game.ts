@@ -219,7 +219,7 @@ export class Game {
         const isCombatPhase = !this.isShopActive && !this.isLevelUpActive && !this.paused;
         this.debugSystem.update(deltaTime, isCombatPhase);
         
-        const prevLevel = this.player.level;
+        const prevLevel = this.player.stats.level;
         // console.log(`🎮 Player HP: ${this.player.currentHP}, Flash Timer: ${this.player.damageFlashTimer > 0 ? 'FLASHING ⚡' : 'normal'}`);
         this.player.update(deltaTime, this.inputManager.inputState, this.canvas.width, this.canvas.height, this.enemies)
 
@@ -243,7 +243,7 @@ export class Game {
             //   console.log(`📊 Damage numbers after: ${this.damageNumbers.length}`);
         }
         // Check if player leveled up this frame
-        const currentLevel = this.player.level;
+        const currentLevel = this.player.stats.level;
         if (currentLevel > this.waveStartLevel + this.levelsGained) {
             this.levelsGained++;
             this.damageNumbers.push(new DamageNumber(
@@ -316,7 +316,8 @@ export class Game {
                     // Critical hit logic
                     let isCrit = false;
                     let damage = projectile.damage;
-                    if (Math.random() * 100 < this.player.critChance) {
+                    const critChance = this.player.stats.total.critChance || 0;
+                    if (Math.random() * 100 < critChance) {
                         isCrit = true;
                         damage *= 2;
                     }
@@ -437,7 +438,10 @@ export class Game {
             const distance = Math.sqrt(dx * dx + dy * dy);
             if (!soma.collected && distance <= 8) { // 8px threshold for center
                 const { soma: somaValue, gold } = soma.collect();
-                this.player.gainXP(somaValue);
+                const leveledUp = this.player.gainXP(somaValue);
+                if (leveledUp) {
+                    this.levelsGained++;
+                }
                 this.player.gainGold(gold);
                 this.somaList.splice(i, 1);
             }
@@ -447,9 +451,13 @@ export class Game {
     // Wave management methods
     private startWave() {
         if (this.waveIndex < this.waveData.length) {
-            this.waveStartLevel = this.player.level;
+            this.waveStartLevel = this.player.stats.level;
             this.levelsGained = 0;
             this.waveTimer = this.waveData[this.waveIndex].duration;
+            
+            // Reset HP to max at wave start
+            this.player.stats.setCurrentHP(this.player.stats.getMaxHP())
+            
             // SpawnManager handles spawning automatically, no need to call startWave
             
             // Update stats at start of wave
@@ -458,11 +466,14 @@ export class Game {
     }
 
     private async endWave() {
+        // Reset HP to max at wave end
+        this.player.stats.setCurrentHP(this.player.stats.getMaxHP())
+        
         // Update stats at end of wave
         this.updateAllStats()
         
         // Check for level ups
-        console.log(`🎯 Wave ended! Player level: ${this.player.level}, Levels gained: ${this.levelsGained}`);
+        console.log(`🎯 Wave ended! Player level: ${this.player.stats.level}, Levels gained: ${this.levelsGained}`);
 
         if (this.levelsGained > 0) {
             console.log(`🎯 Showing level up screen for ${this.levelsGained} levels`);

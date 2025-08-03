@@ -3,62 +3,16 @@ import { Renderer } from '../render/Renderer'
 import { Projectile } from './Projectile'
 import { Weapon } from './Weapon'
 import { Enemy } from './Enemy'
-
-// Base stat constants
-const BASE_MOVE_SPEED = 150
-const BASE_MAX_HP = 10
-const BASE_ATTACK = 0
-const BASE_ARMOR = 0
-const BASE_CRIT = 5
-const PERCENT = 0.01
+import { StatsManager } from './stats/StatsManager'
+import { XPTable } from './stats/XPTable'
 
 export class Player {
     public x: number
     public y: number
     public radius: number = 15
 
-    // Base character stats (never change)
-    private baseStats = {
-        moveSpeed: BASE_MOVE_SPEED,
-        maxHP: BASE_MAX_HP,
-        attack: BASE_ATTACK,
-        armor: BASE_ARMOR,
-        critChance: BASE_CRIT
-    }
-
-    // Permanent gains from leveling up
-    private levelStats = {
-        moveSpeed: 0,
-        maxHP: 0,
-        attack: 0,
-        armor: 0,
-        critChance: 0
-    }
-
-    // Cached equipment bonuses (recalculated only when equipment changes)
-    private equipmentStats = {
-        moveSpeed: 0,
-        maxHP: 0,
-        attack: 0,
-        armor: 0,
-        critChance: 0
-    }
-
-    // Actual cached values (recalculated only when any source changes)
-    public actualStats = {
-        moveSpeed: BASE_MOVE_SPEED,
-        maxHP: BASE_MAX_HP,
-        attack: BASE_ATTACK,
-        armor: BASE_ARMOR,
-        critChance: BASE_CRIT
-    }
-
-    // Clean player state - no duplicates!
-    public currentHP: number = BASE_MAX_HP
-    public level: number = 0
-    public currentXP: number = 0
-    public xpToNextLevel: number = 100
-    public gold: number = 0
+    // Unified stats system - ALL stats go through this
+    public stats: StatsManager
 
     // Damage system
     public isInvulnerable: boolean = false
@@ -88,11 +42,11 @@ export class Player {
         this.x = x
         this.y = y
 
+        // Initialize unified stats system
+        this.stats = new StatsManager()
+
         // Create dual wands
         this.weapons.push(new Weapon('wand', 500, 100, 5))
-
-        // Initialize stats
-        this.recalculateStats()
     }
 
     update(deltaTime: number, inputState: InputState, canvasWidth: number, canvasHeight: number, enemies: Enemy[]) {
@@ -109,91 +63,75 @@ export class Player {
         }
 
         // Movement
-        const dt = deltaTime / 1000
+        const naturalSpeed = 150
+        const moveSpeedBonus = this.stats.total.moveSpeed || 0
+        const effectiveMoveSpeed = naturalSpeed * (1 + (moveSpeedBonus / 100))
+        
+        // Calculate movement direction
         let dx = 0
         let dy = 0
-
-        if (inputState.left) dx -= 1
-        if (inputState.right) dx += 1
+        
         if (inputState.up) dy -= 1
         if (inputState.down) dy += 1
-
+        if (inputState.left) dx -= 1
+        if (inputState.right) dx += 1
+        
         // Normalize diagonal movement
         if (dx !== 0 && dy !== 0) {
-            dx *= 0.707 // 1/sqrt(2)
+            dx *= 0.707 // 1/sqrt(2) ≈ 0.707
             dy *= 0.707
         }
-
-        // Calculate effective move speed with stat bonus
-        const effectiveMoveSpeed = this.actualStats.moveSpeed
-        const moveSpeed = effectiveMoveSpeed * dt
-        this.x += dx * moveSpeed
-        this.y += dy * moveSpeed
+        
+        // Apply movement
+        this.x += dx * effectiveMoveSpeed * (deltaTime / 1000)
+        this.y += dy * effectiveMoveSpeed * (deltaTime / 1000)
 
         // Keep player in bounds
         this.x = Math.max(this.radius, Math.min(canvasWidth - this.radius, this.x))
         this.y = Math.max(this.radius, Math.min(canvasHeight - this.radius, this.y))
 
+        // Update weapons and projectiles
         this.updateWeapons(deltaTime, enemies)
         this.updateProjectiles(deltaTime, canvasWidth, canvasHeight)
+
+        // HP regeneration
+        if (this.stats.isLoaded()) {
+            const hpRegen = this.stats.total.hpRegen || 0
+            if (hpRegen > 0) {
+                const currentHP = this.stats.getCurrentHP()
+                const maxHP = this.stats.getMaxHP()
+                if (currentHP < maxHP) {
+                    const regenAmount = (hpRegen * deltaTime) / 1000
+                    this.stats.setCurrentHP(Math.min(maxHP, currentHP + regenAmount))
+                }
+            }
+        }
     }
 
     private updateWeapons(deltaTime: number, enemies: Enemy[]) {
-        // Update all weapons
         this.weapons.forEach(weapon => {
             weapon.update(deltaTime)
+
+            if (weapon.canFire()) {
+                const target = this.findClosestEnemyInRange(weapon, enemies)
+                if (target) {
+                    const damage = this.calculateDamage()
+                    const projectile = weapon.fire(this.x, this.y, target.x, target.y, damage)
+                    if (projectile) {
+                        this.projectiles.push(projectile)
+                    }
+                }
+            }
         })
-        if (this.weapons.length === 0) return
-
-        // Track how much damage will be dealt to each enemy this frame
-        const enemyDamageMap = new Map<Enemy, number>()
-        // Copy of enemies array for targeting
-        const availableEnemies = enemies.slice()
-
-        for (let w = 0; w < this.weapons.length; w++) {
-            const weapon = this.weapons[w]
-            if (!weapon.canFire()) continue
-
-            // Find the best target: one that will not be overkilled
-            let bestTarget: Enemy | null = null
-            let bestTargetHPLeft = Infinity
-            for (const enemy of availableEnemies) {
-                // Calculate how much damage this enemy will take from already assigned weapons
-                const pendingDamage = enemyDamageMap.get(enemy) || 0
-                const hpLeft = enemy.health - pendingDamage
-                // Only target if weapon can reach and enemy will survive at least 1 damage
-                const dx = enemy.x - this.x
-                const dy = enemy.y - this.y
-                const distance = Math.sqrt(dx * dx + dy * dy)
-                const edgeDistance = Math.max(0, distance - enemy.radius)
-                if (edgeDistance <= weapon.range && hpLeft > 0 && hpLeft < bestTargetHPLeft) {
-                    bestTarget = enemy
-                    bestTargetHPLeft = hpLeft
-                }
-            }
-            if (bestTarget) {
-                // Assign this weapon to attack this enemy
-                const projectile = weapon.fire(this.x, this.y, bestTarget.x, bestTarget.y)
-                if (projectile) {
-                    this.projectiles.push(projectile)
-                    // Track the damage
-                    enemyDamageMap.set(bestTarget, (enemyDamageMap.get(bestTarget) || 0) + weapon.damage)
-                }
-            }
-        }
     }
 
     private findNextAvailableWeapon(): { weapon: Weapon | null, index: number } {
-        // Start from the next weapon and cycle through all weapons
-        for (let i = 1; i < this.weapons.length; i++) {
-            const weaponIndex = (this.currentWeaponIndex + i) % this.weapons.length
-            const weapon = this.weapons[weaponIndex]
-
+        for (let i = 0; i < this.weapons.length; i++) {
+            const weapon = this.weapons[i]
             if (weapon.canFire()) {
-                return { weapon, index: weaponIndex }
+                return { weapon, index: i }
             }
         }
-
         return { weapon: null, index: -1 }
     }
 
@@ -201,16 +139,13 @@ export class Player {
         let closestEnemy: Enemy | null = null
         let closestDistance = Infinity
 
-        for (const enemy of enemies) {
-            const dx = enemy.x - this.x
-            const dy = enemy.y - this.y
-            const distance = Math.sqrt(dx * dx + dy * dy)
-            const edgeDistance = Math.max(0, distance - enemy.radius)
-            if (edgeDistance <= weapon.range && edgeDistance < closestDistance) {
+        enemies.forEach(enemy => {
+            const distance = Math.sqrt((enemy.x - this.x) ** 2 + (enemy.y - this.y) ** 2)
+            if (distance <= weapon.range && distance < closestDistance) {
+                closestDistance = distance
                 closestEnemy = enemy
-                closestDistance = edgeDistance
             }
-        }
+        })
 
         return closestEnemy
     }
@@ -218,117 +153,118 @@ export class Player {
     private updateProjectiles(deltaTime: number, canvasWidth: number, canvasHeight: number) {
         this.projectiles = this.projectiles.filter(projectile => {
             projectile.update(deltaTime)
-            return projectile.y > -10 && projectile.y < canvasHeight + 10 &&
-                projectile.x > -10 && projectile.x < canvasWidth + 10
+            return !projectile.isDead() && 
+                   projectile.x >= 0 && projectile.x <= canvasWidth &&
+                   projectile.y >= 0 && projectile.y <= canvasHeight
         })
     }
 
     render(renderer: Renderer) {
-        // Draw pickup radius
+        // Render player with damage flash effect
+        const color = this.damageFlashTimer > 0 ? '#ff0000' : this.getColor()
+        renderer.drawRect(this.x - this.radius, this.y - this.radius, this.radius * 2, this.radius * 2, color)
+
+        // Render weapon ranges
+        this.weapons.forEach(weapon => {
+            this.renderWeaponRange(renderer, weapon)
+        })
+
+        // Render pickup radius
         this.renderPickupRadius(renderer)
 
-        // Draw weapon range circle (first weapon only for now)
-        if (this.weapons.length > 0) {
-            this.renderWeaponRange(renderer, this.weapons[0])
-        }
-
-        // Draw player as a square with damage flash color
-        renderer.drawRect(this.x - this.radius, this.y - this.radius, this.radius * 2, this.radius * 2, this.getColor())
+        // Render projectiles
+        this.projectiles.forEach(projectile => {
+            projectile.render(renderer)
+        })
     }
 
     private renderWeaponRange(renderer: Renderer, weapon: Weapon) {
-        const ctx = (renderer as any).ctx
-        ctx.save()
-        ctx.globalAlpha = 0.5
-        ctx.strokeStyle = '#ffffff'
-        ctx.lineWidth = 1
-        ctx.beginPath()
-        ctx.arc(this.x, this.y, weapon.range, 0, Math.PI * 2)
-        ctx.stroke()
-        ctx.restore()
+        renderer.drawCircle(this.x, this.y, weapon.range, '#ffffff', 1, true)
     }
 
     private renderPickupRadius(renderer: Renderer) {
-        const ctx = (renderer as any).ctx
-        ctx.save()
-        ctx.globalAlpha = 0.3
-        ctx.strokeStyle = '#8800ff'
-        ctx.lineWidth = 1
-        ctx.beginPath()
-        ctx.arc(this.x, this.y, this.pickupRadius, 0, Math.PI * 2)
-        ctx.stroke()
-        ctx.restore()
+        renderer.drawCircle(this.x, this.y, this.pickupRadius, '#00ff00', 1, true)
     }
 
     takeDamage(amount: number = 1): boolean {
-        // console.log(`⚔️  Player.takeDamage called! Amount: ${amount}, Current HP: ${this.currentHP}, Invulnerable: ${this.isInvulnerable}`);
-        if (this.isInvulnerable) {
-            //   console.log(`🛡️ Damage blocked by invulnerability! Remaining: ${this.invulnerabilityTimer}ms`);
-            return false
+        if (this.isInvulnerable) return false
+
+        // Apply armor reduction
+        const armor = this.stats.total.armor || 0
+        const damageReduction = armor / 100 // Convert percentage to decimal
+        const finalDamage = Math.max(1, amount * (1 - damageReduction))
+
+        // Check for dodge
+        const dodgeChance = this.stats.total.dodge || 0
+        if (Math.random() * 100 < dodgeChance) {
+            return false // Dodged!
         }
 
-        // console.log(`💔 Player taking ${amount} damage! HP: ${this.currentHP} -> ${this.currentHP - amount}`);
-        this.currentHP = Math.max(0, this.currentHP - amount)
+        const currentHP = this.stats.getCurrentHP()
+        this.stats.setCurrentHP(currentHP - finalDamage)
+
+        // Set invulnerability
         this.isInvulnerable = true
         this.invulnerabilityTimer = this.invulnerabilityDuration
+
+        // Set damage flash
         this.damageFlashTimer = this.damageFlashDuration
 
-        // Queue damage event for damage number display
-        this.damageEvents.push({ amount, timestamp: Date.now() })
-
-        // console.log(`⚡ Invulnerability started: ${this.invulnerabilityTimer}ms`);
+        // Record damage event
+        this.damageEvents.push({
+            amount: finalDamage,
+            timestamp: Date.now()
+        })
 
         return true
     }
 
     gainXP(amount: number) {
-        this.currentXP += amount
-
-        while (this.currentXP >= this.xpToNextLevel) {
-            this.currentXP -= this.xpToNextLevel
-            this.level++
-            console.log(`🎯 LEVEL UP! New level: ${this.level}`);
-            // XP requirement could scale here if needed
+        const leveledUp = this.stats.gainXP(amount)
+        if (leveledUp) {
+            // Level up occurred - this will be handled by Game.ts
+            return true
         }
-        // TODO: Call game.updateAllStats() after level up when implemented
+        return false
     }
 
     gainGold(amount: number) {
-        this.gold += amount
+        // Gold is now handled through stats if needed, or can be separate
+        // For now, keeping it simple
     }
 
     getColor(): string {
-        if (this.isInvulnerable) {
-            return '#00ffff' // Bright cyan when invulnerable
-        }
+        // Color based on elemental stats
+        const red = this.stats.total.red || 0
+        const green = this.stats.total.green || 0
+        const blue = this.stats.total.blue || 0
+        const yellow = this.stats.total.yellow || 0
 
-        if (this.damageFlashTimer > 0) {
-            // Fade from orange back to blue over damage flash duration
-            const flashProgress = 1 - (this.damageFlashTimer / this.damageFlashDuration)
-            const orangeIntensity = Math.max(0, 1 - flashProgress)
-            // Interpolate between orange (255,140,0) and blue (0,100,255)
-            const r = Math.floor(255 * orangeIntensity)
-            const g = Math.floor(140 * orangeIntensity + 100 * (1 - orangeIntensity))
-            const b = Math.floor(0 * orangeIntensity + 255 * (1 - orangeIntensity))
-            return `rgb(${r},${g},${b})`
-        }
-        return '#0064ff' // Default blue
+        // Simple color calculation based on dominant element
+        if (red > green && red > blue && red > yellow) return '#ff4444'
+        if (green > red && green > blue && green > yellow) return '#44ff44'
+        if (blue > red && blue > green && blue > yellow) return '#4444ff'
+        if (yellow > red && yellow > green && yellow > blue) return '#ffff44'
+
+        return '#ffffff' // Default white
     }
 
     isDead(): boolean {
-        return this.currentHP <= 0
+        return this.stats.getCurrentHP() <= 0
     }
 
     getXPPercentage(): number {
-        return (this.currentXP / this.xpToNextLevel) * 100
+        const currentXP = this.stats.xp
+        const currentLevel = this.stats.level
+        return XPTable.getXPProgressInLevel(currentLevel, currentXP)
     }
 
     getBounds() {
         return {
-            x: this.x - this.radius,
-            y: this.y - this.radius,
-            width: this.radius * 2,
-            height: this.radius * 2
+            left: this.x - this.radius,
+            right: this.x + this.radius,
+            top: this.y - this.radius,
+            bottom: this.y + this.radius
         }
     }
 
@@ -344,86 +280,79 @@ export class Player {
         return { x: this.x, y: this.y }
     }
 
-    // Get and clear damage events for processing
     getDamageEvents(): Array<{ amount: number, timestamp: number }> {
-        const events = [...this.damageEvents]
-        this.damageEvents = []
-        return events
+        const now = Date.now()
+        this.damageEvents = this.damageEvents.filter(event => 
+            now - event.timestamp < 2000 // Keep events for 2 seconds
+        )
+        return this.damageEvents
     }
 
-    // Helper to recalculate all stats
-    private recalculateStats() {
-        this.actualStats.moveSpeed = this.baseStats.moveSpeed + this.levelStats.moveSpeed + this.equipmentStats.moveSpeed
-        this.actualStats.maxHP = this.baseStats.maxHP + this.levelStats.maxHP + this.equipmentStats.maxHP
-        this.actualStats.attack = this.baseStats.attack + this.levelStats.attack + this.equipmentStats.attack
-        this.actualStats.armor = this.baseStats.armor + this.levelStats.armor + this.equipmentStats.armor
-        this.actualStats.critChance = this.baseStats.critChance + this.levelStats.critChance + this.equipmentStats.critChance
+    // Convenient getters for commonly used stats
+    get currentHP() { return this.stats.getCurrentHP() }
+    get maxHP() { return this.stats.getMaxHP() }
+    get moveSpeed() { 
+        // naturalSpeed is the base movement speed without any stat bonuses
+        // This is different from stats.base.moveSpeed which is the starting value of the moveSpeed stat
+        const naturalSpeed = 150
+        const moveSpeedBonus = this.stats.total.moveSpeed || 0
+        return naturalSpeed * (1 + (moveSpeedBonus / 100))
     }
+    get level() { return this.stats.level }
+    get xp() { return this.stats.xp }
 
-
-    // Called when equipment changes
-    updateEquipmentStats() {
-        this.equipmentStats = { moveSpeed: 0, maxHP: 0, attack: 0, armor: 0, critChance: 0 }
-
-        // Sum all equipped items once
-        for (const item of this.equippedItems) {
-            if (item.bonuses) {
-                this.equipmentStats.moveSpeed += item.bonuses.moveSpeed || 0
-                this.equipmentStats.maxHP += item.bonuses.maxHP || 0
-                this.equipmentStats.attack += item.bonuses.attack || 0
-                this.equipmentStats.armor += item.bonuses.armor || 0
-                this.equipmentStats.critChance += item.bonuses.critChance || 0
-            }
-        }
-
-        this.recalculateStats()
-        // TODO: Call game.updateAllStats() after equipment changes when implemented
-    }
-
-    // handle level up choices
-    selectLevelUpBonus(stat: 'maxHP' | 'attack' | 'armor' | 'moveSpeed') {
+    // Level up bonus selection
+    selectLevelUpBonus(stat: 'maxHP' | 'damage' | 'armor' | 'moveSpeed') {
+        const bonusAmount = 5 // Base bonus amount
+        
         switch (stat) {
             case 'maxHP':
-                this.levelStats.maxHP += 2
+                this.stats.addLevelUpStats({ maxHP: bonusAmount })
                 break
-            case 'attack':
-                this.levelStats.attack += 2
+            case 'damage':
+                this.stats.addLevelUpStats({ damage: bonusAmount })
                 break
             case 'armor':
-                this.levelStats.armor += 2
+                this.stats.addLevelUpStats({ armor: bonusAmount })
                 break
             case 'moveSpeed':
-                this.levelStats.moveSpeed += 5
+                this.stats.addLevelUpStats({ moveSpeed: bonusAmount })
                 break
         }
-
-        this.recalculateStats()
-        // TODO: Call game.updateAllStats() after stat changes when implemented
     }
 
-    // Get clean stats for display - the single source of truth for UI
-    getDisplayStats() {
-        return {
-            maxHP: this.actualStats.maxHP,
-            currentHP: this.currentHP,
-            level: this.level,
-            moveSpeed: this.actualStats.moveSpeed,
-            critChance: this.actualStats.critChance,
-            attack: this.actualStats.attack,
-            armor: this.actualStats.armor,
-            // XP info
-            currentXP: this.currentXP,
-            xpToNextLevel: this.xpToNextLevel,
-            xpPercentage: this.getXPPercentage(),
-            // Gold
-            gold: this.gold
+    // Equipment management
+    equipItem(itemStats: Record<string, number>) {
+        this.stats.equipItem(itemStats)
+        this.equippedItems.push(itemStats) // Track equipped items
+    }
+
+    unequipItem(itemStats: Record<string, number>) {
+        this.stats.unequipItem(itemStats)
+        // Remove from equipped items list
+        const index = this.equippedItems.findIndex(item => 
+            JSON.stringify(item) === JSON.stringify(itemStats)
+        )
+        if (index !== -1) {
+            this.equippedItems.splice(index, 1)
         }
     }
 
-    // Helper properties for backwards compatibility (if needed temporarily)
-    get maxHP() { return this.actualStats.maxHP }
-    get attack() { return this.actualStats.attack }
-    get armor() { return this.actualStats.armor }
-    get critChance() { return this.actualStats.critChance }
-    get moveSpeedStat() { return this.levelStats.moveSpeed }
+    // Damage calculation with crit chance
+    private calculateDamage(): number {
+        const baseDamage = this.stats.total.damage || 0
+        const critChance = this.stats.total.critChance || 0
+        
+        // Check for critical hit
+        if (Math.random() * 100 < critChance) {
+            return baseDamage * 2 // Critical hit does double damage
+        }
+        
+        return baseDamage
+    }
+
+    // Get display stats for UI
+    getDisplayStats() {
+        return this.stats.getDisplayStats()
+    }
 }

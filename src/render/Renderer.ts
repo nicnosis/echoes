@@ -30,11 +30,18 @@ export class Renderer {
     this.ctx.fillRect(x, y, width, height)
   }
 
-  drawCircle(x: number, y: number, radius: number, color: string) {
-    this.ctx.fillStyle = color
+  drawCircle(x: number, y: number, radius: number, color: string, lineWidth: number = 0, strokeOnly: boolean = false) {
     this.ctx.beginPath()
     this.ctx.arc(x, y, radius, 0, Math.PI * 2)
-    this.ctx.fill()
+    
+    if (strokeOnly) {
+      this.ctx.strokeStyle = color
+      this.ctx.lineWidth = lineWidth
+      this.ctx.stroke()
+    } else {
+      this.ctx.fillStyle = color
+      this.ctx.fill()
+    }
   }
 
   // Draw text with proper alpha handling
