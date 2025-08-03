@@ -67,7 +67,7 @@ export class ShopScreen {
             await this.statsPanel.initialize()
             this.statsPanel.registerContainer(shopStatsContainer, true) // Register as master
 
-            console.log(`🎯 StatsPanel loaded in shop stats container`)
+    
 
             // Verify all elements were found
             if (!this.shopTitle || !this.shopGold || !this.rerollButton || !this.continueButton) {
@@ -122,7 +122,7 @@ export class ShopScreen {
         // Update stats using the StatsPanel component
         this.statsPanel.update(player)
 
-        console.log(`🎯 Shop stats updated via StatsPanel`)
+
     }
 
     hide() {

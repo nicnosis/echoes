@@ -29,7 +29,7 @@ export class StatsPanel {
 
     // Register a container that should display stats
     registerContainer(container: HTMLElement, isMaster: boolean = false): void {
-        console.log('Registering container:', container, 'isMaster:', isMaster)
+
         if (!this.containers.includes(container)) {
             this.containers.push(container)
             container.innerHTML = this.templateHTML
@@ -54,7 +54,7 @@ export class StatsPanel {
     // Update all registered containers with current player stats
     update(player: Player): void {
         if (!this.masterContainer) {
-            console.warn('No master container set for StatsPanel')
+    
             return
         }
 

@@ -230,8 +230,6 @@ export class Game {
         // Process damage events from player
         const damageEvents = this.player.getDamageEvents()
         for (const event of damageEvents) {
-            //   console.log(`💥 PLAYER DAMAGE EVENT! Creating damage number: -${event.amount} at (${this.player.x}, ${this.player.y - this.player.radius - 20})`);
-            //   console.log(`📊 Damage numbers before: ${this.damageNumbers.length}`);
             this.damageNumbers.push(new DamageNumber(
                 this.player.x,
                 this.player.y - this.player.radius - 20,
@@ -240,8 +238,9 @@ export class Game {
                 `-${event.amount}`,
                 true // is player damage (red)
             ));
-            //   console.log(`📊 Damage numbers after: ${this.damageNumbers.length}`);
         }
+        // Clear damage events after processing them
+        this.player.clearDamageEvents()
         // Check if player leveled up this frame
         const currentLevel = this.player.stats.level;
         if (currentLevel > this.waveStartLevel + this.levelsGained) {

@@ -21,7 +21,7 @@ export class Player {
 
     // Visual effects
     public damageFlashTimer: number = 0
-    public damageFlashDuration: number = 1200
+    public damageFlashDuration: number = 500
 
     // Weapons and projectiles
     public weapons: Weapon[] = []
@@ -94,18 +94,7 @@ export class Player {
         this.updateWeapons(deltaTime, enemies)
         this.updateProjectiles(deltaTime, canvasWidth, canvasHeight)
 
-        // HP regeneration
-        if (this.stats.isLoaded()) {
-            const hpRegen = this.stats.total.hpRegen || 0
-            if (hpRegen > 0) {
-                const currentHP = this.stats.getCurrentHP()
-                const maxHP = this.stats.getMaxHP()
-                if (currentHP < maxHP) {
-                    const regenAmount = (hpRegen * deltaTime) / 1000
-                    this.stats.setCurrentHP(Math.min(maxHP, currentHP + regenAmount))
-                }
-            }
-        }
+
     }
 
     private updateWeapons(deltaTime: number, enemies: Enemy[]) {
@@ -187,7 +176,9 @@ export class Player {
     }
 
     takeDamage(amount: number = 1): boolean {
-        if (this.isInvulnerable) return false
+        if (this.isInvulnerable) {
+            return false
+        }
 
         // Apply armor reduction
         const armor = this.stats.total.armor || 0
@@ -210,11 +201,13 @@ export class Player {
         // Set damage flash
         this.damageFlashTimer = this.damageFlashDuration
 
-        // Record damage event
+        // Record damage event ONLY when damage is actually taken
         this.damageEvents.push({
             amount: finalDamage,
             timestamp: Date.now()
         })
+
+
 
         return true
     }
@@ -286,6 +279,10 @@ export class Player {
             now - event.timestamp < 2000 // Keep events for 2 seconds
         )
         return this.damageEvents
+    }
+
+    clearDamageEvents(): void {
+        this.damageEvents = []
     }
 
     // Convenient getters for commonly used stats

@@ -76,7 +76,7 @@ export class StatsManager {
       { key: 'xp', baseValue: 0 },
       { key: 'maxHP', baseValue: 10 },
       { key: 'hp', baseValue: 10 },
-      { key: 'hpRegen', baseValue: 5 },
+      { key: 'hpRegen', baseValue: 0 },
       { key: 'lifeSteal', baseValue: 0 },
       { key: 'damage', baseValue: 0 },
       { key: 'red', baseValue: 0 },
@@ -293,7 +293,7 @@ export class StatsManager {
 
   // Master panel management for UI
   updateMasterStatsPanel(masterContainer: HTMLElement): void {
-    console.log('StatsManager: updateMasterStatsPanel called')
+    
     const displayStats = this.getDisplayStats()
     console.log('StatsManager: displayStats', displayStats)
     
