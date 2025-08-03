@@ -1,4 +1,4 @@
-# StatsManager
+# StatsManager.ts
 
 The role of our stats manager and how we approach stats. (I will also have another file that is the ‘stats dictionary’ which lays out the order, etc.)
 
@@ -9,20 +9,12 @@ The role of our stats manager and how we approach stats. (I will also have anoth
 - I think it might make sense to manage the stats in a table especially given the number of fields. It will be easier to drag them around, reorder etc.
 
 ### → STORE STATS
-
-- Hierarchy including primary and secondary e.g.
-  - player.stats.p will store Primary Stats. These are the core stats that help a player grow (e.g. maxHP, moveSpeed, meleeDmg)
-  - player.stats.s will store Secondary Stats. These are supportive stats such as an increase in pickup radius.
-  - It will be broken down further for primary and secondary:
-    - baseStats: the amount that the player starts with
-    - levelUpStats: stat increases from Level Up selections
-    - gearStats: stat increases from items/equipment
-    - totalStats: calculated sum of stats from base amount, from level up, and from gear
-  - player.stats.game (other core stats) will store Level, current XP, XP to next level, and Soma
-      - hp (current hp)
-      - xp (current amount)
-      - xp for next level (cumulative amount necessary to reach next level)
-      - soma (currency; dropped when enemies die)
+- Eventually we will have the StatsPanel with two buttons (primary and secondary) so we can click through to see which set we want to look at.
+- These are the composite parts:
+    - base: the amount that the player starts with
+    - fromLevelUp: stat increases from Level Up selections
+    - fromGear: stat increases from items/equipment
+    - total: calculated sum of stats from base amount, from level up, and from gear
 
 ### → SET DEFAULT STATS at the start of the game
 
@@ -91,9 +83,9 @@ The `stats.csv` file defines the structure and properties of all player statisti
 - **Usage**: Tooltips and help text
 
 ### **isPercent** (boolean)
-- **Purpose**: Indicates if the stat value should be displayed as a percentage
+- **Purpose**: Indicates if the stat value should be displayed or calculated as a percentage
 - **Values**: `TRUE` (show as %), `FALSE` or empty (show as raw number)
-- **Usage**: Affects UI formatting (e.g., "15%" vs "15")
+- **Usage**: Affects UI formatting (e.g., "15%" vs "15"). Also affects calculation. For example, critChance will be stored as 5 but the chance of a critical hit will be calculated as critChance/100.
 
 ### **baseValue** (number)
 - **Purpose**: Starting value for the stat when the game begins
@@ -140,3 +132,5 @@ The StatsManager loads this CSV to:
 - Format display values (percentages vs raw numbers)
 - Control UI visibility and ordering
 - Provide descriptions for tooltips and help text
+
+# To-do:
