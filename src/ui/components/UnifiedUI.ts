@@ -34,7 +34,7 @@ export class UnifiedUI {
   private async loadCSS(): Promise<void> {
     try {
       // Check if CSS is already loaded
-      if (document.querySelector('link[href="/src/ui/components/UnifiedUI.css"]')) {
+      if (document.querySelector('link[href="/src/ui/styles/UnifiedUI.css"]')) {
         console.log('✅ UnifiedUI CSS already loaded')
         return
       }
@@ -43,7 +43,7 @@ export class UnifiedUI {
       const link = document.createElement('link')
       link.rel = 'stylesheet'
       link.type = 'text/css'
-      link.href = '/src/ui/components/UnifiedUI.css'
+      link.href = '/src/ui/styles/UnifiedUI.css'
       
       // Add to document head
       document.head.appendChild(link)
