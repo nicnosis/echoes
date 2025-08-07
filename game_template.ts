@@ -5,7 +5,6 @@ import { Enemy } from './Enemy'
 import { Soma } from './Soma'
 import { SpawnManager } from './SpawnManager'
 import { UnifiedUI, UIScreen } from '../ui/components/UnifiedUI'
-import { HUD } from '../ui/components/HUD'
 
 enum GamePhase {
   WAVE = 'wave',
@@ -40,37 +39,6 @@ export class Game {
   
   // UI - Single unified interface
   private ui: UnifiedUI
-  
-  // HUD for wave gameplay
-  private hud: HUD
-  
-  // Game loop timing
-  private lastTime: number = 0
-
-  // Wave configuration (keeping existing timings)
-  private waveData = [
-    { wave: 1, duration: 10 }, //its 20 but i want to test it out
-    { wave: 2, duration: 10 }, //its 25 but i want to test it out
-    { wave: 3, duration: 30 },
-    { wave: 4, duration: 35 },
-    { wave: 5, duration: 40 },
-    { wave: 6, duration: 50 },
-    { wave: 7, duration: 60 },
-    { wave: 8, duration: 60 },
-    { wave: 9, duration: 60 },
-    { wave: 10, duration: 60 },
-    { wave: 11, duration: 60 },
-    { wave: 12, duration: 60 },
-    { wave: 13, duration: 60 },
-    { wave: 14, duration: 75 },
-    { wave: 15, duration: 60 },
-    { wave: 16, duration: 60 },
-    { wave: 17, duration: 60 },
-    { wave: 18, duration: 60 },
-    { wave: 19, duration: 60 },
-    { wave: 20, duration: 60 },
-    { wave: 21, duration: 90 }
-  ]
 
   constructor(canvas: HTMLCanvasElement) {
     this.canvas = canvas
@@ -86,16 +54,13 @@ export class Game {
     // Initialize unified UI
     this.ui = new UnifiedUI()
     
-    // Initialize HUD
-    this.hud = new HUD()
-    
     // Connect UI event handlers
     this.setupUICallbacks()
     
     // Setup input listeners
     this.setupEventListeners()
     
-    console.log('🎮 Game initialized with unified UI and HUD')
+    console.log('🎮 Game initialized with unified UI')
   }
 
   // =============================================================================
@@ -126,20 +91,19 @@ export class Game {
   start(): void {
     this.running = true
     this.beginWave()
-    this.gameLoop(0)
+    this.gameLoop()
     console.log('🚀 Game started')
   }
 
-  private gameLoop = (currentTime: number): void => {
+  private gameLoop(): void {
     if (!this.running) return
 
-    const deltaTime = currentTime - this.lastTime
-    this.lastTime = currentTime
-
+    const deltaTime = 1/60 // 60 FPS
+    
     this.update(deltaTime)
     this.render()
     
-    requestAnimationFrame(this.gameLoop)
+    requestAnimationFrame(() => this.gameLoop())
   }
 
   private update(deltaTime: number): void {
@@ -164,32 +128,11 @@ export class Game {
     this.renderer.clear()
     
     // Render game objects (always visible)
-    this.player.render(this.renderer)
-    this.enemies.forEach(enemy => enemy.render(this.renderer))
-    this.somaList.forEach(soma => soma.render(this.renderer))
-    
-    // Render spawn manager (pre-spawn indicators)
-    this.spawnManager.render(this.renderer)
-    
-    // Render player projectiles
-    for (const projectile of this.player.projectiles) {
-      projectile.render(this.renderer)
-    }
-    
-    // Render wave timer during wave phase
-    if (this.gamePhase === GamePhase.WAVE && this.waveIndex < this.waveData.length) {
-      const timerText = `Wave ${this.waveData[this.waveIndex].wave}: ${Math.ceil(this.waveTimer)}s`
-      this.renderer.drawText(
-        timerText,
-        this.canvas.width / 2 - 80,
-        48,
-        '#fff',
-        'bold 36px Arial'
-      )
-    }
+    this.renderer.renderPlayer(this.player)
+    this.enemies.forEach(enemy => this.renderer.renderEnemy(enemy))
+    this.somaList.forEach(soma => this.renderer.renderSoma(soma))
     
     // UI is handled by HTML/CSS overlays via UnifiedUI
-    this.renderer.present()
   }
 
   // =============================================================================
@@ -197,21 +140,17 @@ export class Game {
   // =============================================================================
 
   private updateWave(deltaTime: number): void {
-    // Update wave timer - deltaTime is already in milliseconds
-    this.waveTimer -= deltaTime / 1000
+    // Update wave timer
+    this.waveTimer -= deltaTime
     this.ui.updateWaveTimer(this.waveTimer)
     
-    // Spawn enemies using the spawn manager
-    const newEnemies = this.spawnManager.update(deltaTime, this.player, this.enemies)
-    this.enemies.push(...newEnemies)
+    // Spawn enemies
+    this.spawnManager.update(deltaTime, this.enemies)
     
     // Update game objects
     this.updateEnemies(deltaTime)
     this.updateSoma(deltaTime)
-    this.player.update(deltaTime, this.inputManager.inputState, this.canvas.width, this.canvas.height, this.enemies)
-    
-    // Update HUD during wave gameplay
-    this.hud.update(this.player)
+    this.player.update(deltaTime)
     
     // Check collisions
     this.checkCollisions()
@@ -224,32 +163,14 @@ export class Game {
 
   private updateLevelUp(deltaTime: number): void {
     // Level up screen handles its own logic via UnifiedUI
-    // Player cannot move during level up
-    // Only update damage flash and invulnerability timers
-    if (this.player.damageFlashTimer > 0) {
-      this.player.damageFlashTimer -= deltaTime
-    }
-    if (this.player.invulnerabilityTimer > 0) {
-      this.player.invulnerabilityTimer -= deltaTime
-      if (this.player.invulnerabilityTimer <= 0) {
-        this.player.isInvulnerable = false
-      }
-    }
+    // Player can still move around during level up
+    this.player.update(deltaTime)
   }
 
   private updateShop(deltaTime: number): void {
-    // Shop screen handles its own logic via UnifiedUI  
-    // Player cannot move during shop
-    // Only update damage flash and invulnerability timers
-    if (this.player.damageFlashTimer > 0) {
-      this.player.damageFlashTimer -= deltaTime
-    }
-    if (this.player.invulnerabilityTimer > 0) {
-      this.player.invulnerabilityTimer -= deltaTime
-      if (this.player.invulnerabilityTimer <= 0) {
-        this.player.isInvulnerable = false
-      }
-    }
+    // Shop screen handles its own logic via UnifiedUI
+    // Player can still move around during shop
+    this.player.update(deltaTime)
   }
 
   // =============================================================================
@@ -263,24 +184,25 @@ export class Game {
     this.gamePhase = GamePhase.WAVE
     
     // Initialize wave state
-    this.waveLevelStartedAt = this.player.stats.level
+    this.waveLevelStartedAt = this.player.stats.total.level
     this.waveTimer = this.getWaveDuration(this.waveIndex)
     
-    // Reset player health to full
-    this.player.stats.setCurrentHP(this.player.stats.getMaxHP())
+    // Reset player health to full (don't modify base stats!)
+    this.player.stats.hp = this.player.stats.total.maxHP
+    this.player.stats.updateAllStats()
     
     // Clear game objects
     this.enemies = []
     this.somaList = []
     
-    // Configure spawn manager for this wave (assuming this method exists)
-    // this.spawnManager.configureWave(this.waveIndex)
+    // Configure spawn manager for this wave
+    this.spawnManager.configureWave(this.waveIndex)
     
     // Update UI - hide all menus, show HUD
     this.ui.hide()
     this.ui.showHUD()
     this.ui.updateWaveInfo(this.waveIndex + 1, this.waveTimer)
-    this.ui.updateStats(this.player)
+    this.ui.updateStats(this.player.stats.total)
     
     console.log(`⏱️ Wave duration: ${this.waveTimer}s, Starting level: ${this.waveLevelStartedAt}`)
   }
@@ -293,11 +215,12 @@ export class Game {
     this.enemies = []
     
     // Calculate level up credits
-    const currentLevel = this.player.stats.level
+    const currentLevel = this.player.stats.total.level
     this.levelUpCredits = currentLevel - this.waveLevelStartedAt
     
     // Reset player health to full
-    this.player.stats.setCurrentHP(this.player.stats.getMaxHP())
+    this.player.stats.hp = this.player.stats.total.maxHP
+    this.player.stats.updateAllStats()
     
     console.log(`📊 Level ups gained: ${this.levelUpCredits}`)
     
@@ -315,10 +238,13 @@ export class Game {
     // Set phase
     this.gamePhase = GamePhase.LEVELUP
     
+    // Update all stats
+    this.player.stats.updateAllStats()
+    
     // Switch to level up UI
     this.ui.switchUI(UIScreen.LEVELUP)
     this.ui.updateLevelUpInfo(this.levelUpCredits)
-    this.ui.updateStats(this.player)
+    this.ui.updateStats(this.player.stats.total)
   }
 
   private beginShop(): void {
@@ -327,10 +253,13 @@ export class Game {
     // Set phase
     this.gamePhase = GamePhase.SHOP
     
+    // Update all stats
+    this.player.stats.updateAllStats()
+    
     // Switch to shop UI
     this.ui.switchUI(UIScreen.SHOP)
-    this.ui.updateShopInfo(this.waveIndex + 2, this.player.stats.getStat('soma') || 0)
-    this.ui.updateStats(this.player)
+    this.ui.updateShopInfo(this.waveIndex + 2, this.player.stats.total.soma)
+    this.ui.updateStats(this.player.stats.total)
   }
 
   // =============================================================================
@@ -342,66 +271,52 @@ export class Game {
       enemy.update(deltaTime, this.player)
     })
     
-    // Remove enemies that have completed their death animation
-    this.enemies = this.enemies.filter(enemy => !enemy.isDeathAnimationComplete())
+    // Remove dead enemies
+    this.enemies = this.enemies.filter(enemy => enemy.isAlive())
   }
 
   private updateSoma(deltaTime: number): void {
-    const attractionRadius = this.player.pickupRadius // Attraction starts at pickup radius
-    
     this.somaList.forEach(soma => {
-      soma.update(deltaTime) // Update scatter animation
-
-      const dx = this.player.x - soma.x
-      const dy = this.player.y - soma.y
-      const distance = Math.sqrt(dx * dx + dy * dy)
-      
-      if (!soma.collected && distance <= attractionRadius) {
-        // Attract Soma to player center
-        const attractionForce = 600
-        const dt = deltaTime / 1000
-        const dirX = dx / (distance || 1)
-        const dirY = dy / (distance || 1)
-        soma.x += dirX * attractionForce * dt
-        soma.y += dirY * attractionForce * dt
-      }
+      soma.update(deltaTime)
     })
     
-    // Remove collected soma (no expiration mechanism in Soma class)
-    this.somaList = this.somaList.filter(soma => !soma.collected)
+    // Remove expired soma
+    this.somaList = this.somaList.filter(soma => !soma.isExpired())
   }
 
   private checkCollisions(): void {
-    // Player vs Soma (collection) - using existing logic from old game
-    for (let i = this.somaList.length - 1; i >= 0; i--) {
-      const soma = this.somaList[i]
-      const dx = soma.x - this.player.x
-      const dy = soma.y - this.player.y
-      const distance = Math.sqrt(dx * dx + dy * dy)
-      
-      if (!soma.collected && distance <= 8) { // 8px threshold for center
-        const { soma: somaValue } = soma.collect()
-        const leveledUp = this.player.gainXP(somaValue)
+    // Player vs Soma (collection)
+    this.somaList.forEach((soma, index) => {
+      if (this.checkCollision(this.player, soma)) {
+        // Collect soma
+        const somaValue = soma.getValue()
+        const leveledUp = this.player.stats.gainXP(somaValue)
         
-        // Increment soma currency (core stat)
-        const currentSoma = this.player.stats.getStat('soma') || 0
-        this.player.stats.setBaseStat('soma', currentSoma + somaValue)
-        this.somaList.splice(i, 1)
+        // Remove collected soma
+        this.somaList.splice(index, 1)
         
-        // Update UI after collecting soma
-        this.ui.updateStats(this.player)
+        // Update UI
+        this.ui.updateStats(this.player.stats.total)
         
-        // Only log level ups, not every soma pickup
-        if (leveledUp) {
-          console.log(`🎉 LEVEL UP! Now level ${this.player.stats.level}`)
-        }
+        // console.log(`💎 Collected ${somaValue} soma${leveledUp ? ' - LEVEL UP!' : ''}`)
       }
-    }
+    })
     
-    // Player projectiles vs Enemies
-    this.checkProjectileCollisions()
+    // Player vs Enemies (damage)
+    this.enemies.forEach(enemy => {
+      if (this.checkCollision(this.player, enemy)) {
+        // Apply damage to player
+        const damage = enemy.getDamage()
+        this.player.takeDamage(damage)
+        
+        // Update UI
+        this.ui.updateStats(this.player.stats.total)
+        
+        console.log(`💥 Player took ${damage} damage`)
+      }
+    })
     
-    // TODO: Player vs Enemies (damage)
+    // TODO: Player weapons vs Enemies
     // TODO: Enemy projectiles vs Player
   }
 
@@ -412,19 +327,14 @@ export class Game {
   public onLevelUpSelection(statBonus: Record<string, number>): void {
     console.log(`📈 Level up selection:`, statBonus)
     
-    // Apply stat bonus using player's selectLevelUpBonus method
-    // Convert our statBonus format to the player's expected format
-    const statKeys = Object.keys(statBonus)
-    if (statKeys.length > 0) {
-      const statName = statKeys[0] // Take the first stat
-      this.player.selectLevelUpBonus(statName)
-    }
+    // Apply stat bonus
+    this.player.stats.addLevelUpStats(statBonus)
     
     // Decrement credits
     this.levelUpCredits--
     
     // Update UI
-    this.ui.updateStats(this.player)
+    this.ui.updateStats(this.player.stats.total)
     
     // Check if level up phase is complete
     if (this.levelUpCredits <= 0) {
@@ -448,7 +358,7 @@ export class Game {
     
     if (this.paused) {
       this.ui.switchUI(UIScreen.PAUSE)
-      this.ui.updateStats(this.player)
+      this.ui.updateStats(this.player.stats.total)
       console.log('⏸️ Game paused')
     } else {
       this.ui.hide()
@@ -457,65 +367,12 @@ export class Game {
     }
   }
 
-  private checkProjectileCollisions(): void {
-    for (let i = this.player.projectiles.length - 1; i >= 0; i--) {
-      const projectile = this.player.projectiles[i]
-      // Use center-based collision for 'fully inside' logic
-      for (let j = this.enemies.length - 1; j >= 0; j--) {
-        const enemy = this.enemies[j]
-        if (enemy.isDying()) continue // Skip dying enemies
-
-        const dx = projectile.x - enemy.x
-        const dy = projectile.y - enemy.y
-        const distance = Math.sqrt(dx * dx + dy * dy)
-        if (distance <= enemy.radius - projectile.size / 2) {
-          this.player.projectiles.splice(i, 1)
-          // Critical hit logic
-          let isCrit = false
-          let damage = projectile.damage
-          const critChance = this.player.stats.getStat('critChance') || 0
-          if (Math.random() * 100 < critChance) {
-            isCrit = true
-            damage *= 2
-          }
-          const enemyDied = enemy.takeDamage(damage)
-          
-          if (enemyDied) {
-            this.dropSoma(enemy.x, enemy.y)
-          }
-          break
-        }
-      }
-    }
-  }
-
-  private dropSoma(x: number, y: number): void {
-    // Create soma drops when enemies die
-    const somaCount = 50 + Math.floor(Math.random() * 3) // 50-52 Soma
-    const angleStep = (Math.PI * 2) / somaCount
-    const baseAngle = Math.random() * Math.PI * 2
-    
-    for (let i = 0; i < somaCount; i++) {
-      // Spread in a small arc/circle with random offset
-      const angle = baseAngle + i * angleStep + (Math.random() - 0.5) * 0.4
-      const distance = 20 + Math.random() * 10
-      const targetX = x + Math.cos(angle) * distance
-      const targetY = y + Math.sin(angle) * distance
-      // Create Soma with scatter animation from center to target position
-      this.somaList.push(new Soma(x, y, 1, targetX, targetY))
-    }
-  }
-
   // =============================================================================
   // UTILITY METHODS
   // =============================================================================
 
   private getWaveDuration(waveIndex: number): number {
-    // Use existing wave data if available, otherwise use formula
-    if (waveIndex < this.waveData.length) {
-      return this.waveData[waveIndex].duration
-    }
-    // Fallback formula: 30 seconds base + 5 seconds per wave
+    // Simple formula: 30 seconds base + 5 seconds per wave
     return 30 + (waveIndex * 5)
   }
 
@@ -536,9 +393,9 @@ export class Game {
   }
 
   private setupEventListeners(): void {
-    // Escape key for pause - only during wave phase
+    // Escape key for pause
     window.addEventListener('keydown', (e) => {
-      if (e.code === 'Escape' && this.gamePhase === GamePhase.WAVE) {
+      if (e.code === 'Escape') {
         this.onPauseToggle()
       }
     })
@@ -568,3 +425,4 @@ export class Game {
     return this.paused
   }
 }
+

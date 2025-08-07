@@ -1,0 +1,124 @@
+<div class="shop-content">
+  <!-- Shop header (labels, gold, reroll) -->
+  <div class="shop-header">
+    <div id="shop-title" class="shop-title">Shop - Wave <span id="wave-number">1</span></div>
+    <div id="shop-gold" class="shop-gold">Soma: <span id="soma-amount">0</span></div>
+    <button id="shop-reroll-btn" class="shop-reroll-btn">Reroll (10)</button>
+  </div>
+
+  <!-- Shop choices -->
+  <div class="shop-choices">
+    <div class="shop-choice-slot">Body Part 1</div>
+    <div class="shop-choice-slot">Body Part 2</div>
+    <div class="shop-choice-slot">Body Part 3</div>
+    <div class="shop-choice-slot">Body Part 4</div>
+  </div>
+
+  <!-- Shop gear section (placeholder for now) -->
+  <div class="shop-gear">
+    <p>Future transformation options will appear here...</p>
+  </div>
+
+  <!-- Continue button -->
+  <div class="shop-continue">
+    <button id="go-wave-btn" class="shop-continue-btn">Start Next Wave</button>
+  </div>
+</div>
+
+<style>
+.shop-content {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  gap: 20px;
+}
+
+.shop-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #333;
+  padding: 15px;
+  border-radius: 8px;
+}
+
+.shop-title {
+  font-size: 18px;
+  font-weight: bold;
+  color: #ffd700;
+}
+
+.shop-gold {
+  font-size: 14px;
+  color: #4CAF50;
+  font-weight: bold;
+}
+
+.shop-reroll-btn {
+  background: #ff9800;
+  color: white;
+  border: none;
+  padding: 10px 15px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.shop-reroll-btn:hover {
+  background: #f57c00;
+}
+
+.shop-choices {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 15px;
+  flex: 1;
+}
+
+.shop-choice-slot {
+  background: #444;
+  border: 2px solid #555;
+  border-radius: 8px;
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  color: #ccc;
+  min-height: 80px;
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+
+.shop-choice-slot:hover {
+  border-color: #ffd700;
+  background: #4a4a4a;
+}
+
+.shop-gear {
+  background: #333;
+  border-radius: 8px;
+  padding: 20px;
+  text-align: center;
+  color: #888;
+}
+
+.shop-continue {
+  text-align: center;
+}
+
+.shop-continue-btn {
+  background: #4CAF50;
+  color: white;
+  border: none;
+  padding: 15px 30px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 18px;
+  font-weight: bold;
+}
+
+.shop-continue-btn:hover {
+  background: #45a049;
+}
+</style>

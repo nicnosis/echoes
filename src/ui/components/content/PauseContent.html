@@ -1,0 +1,129 @@
+<div class="pause-content">
+  <!-- Inventory Section (left 2/3) -->
+  <div class="inventory-section">
+    <!-- Weapons Section -->
+    <div class="weapons-section">
+      <div class="weapons-title">Weapons</div>
+      <div class="weapons-grid">
+        <!-- 6 weapon slots - horizontal flex container -->
+        <div class="weapon-slot filled">Wand</div>
+        <div class="weapon-slot">Empty</div>
+        <div class="weapon-slot">Empty</div>
+        <div class="weapon-slot">Empty</div>
+        <div class="weapon-slot">Empty</div>
+        <div class="weapon-slot">Empty</div>
+      </div>
+    </div>
+    
+    <!-- Items Section -->
+    <div class="items-section">
+      <div class="items-title">Items</div>
+      <div class="items-container">
+        <!-- Big empty flex pane for now -->
+        <span>No items yet</span>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Bottom Buttons -->
+  <div class="pause-buttons">
+    <button class="pause-btn primary" id="resume-btn">RESUME</button>
+    <button class="pause-btn secondary" id="restart-btn">RESTART</button>
+    <button class="pause-btn secondary" id="main-menu-btn">MAIN MENU</button>
+  </div>
+</div>
+
+<style>
+.pause-content {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.inventory-section {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.weapons-section, .items-section {
+  background: #333;
+  border-radius: 8px;
+  padding: 15px;
+}
+
+.weapons-title, .items-title {
+  font-size: 14px;
+  font-weight: bold;
+  color: #ffd700;
+  margin-bottom: 8px;
+}
+
+.weapons-grid {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.weapon-slot {
+  background: #444;
+  border: 2px solid #555;
+  border-radius: 4px;
+  padding: 10px;
+  min-width: 80px;
+  text-align: center;
+  color: #ccc;
+}
+
+.weapon-slot.filled {
+  background: #2a5a2a;
+  border-color: #4a8a4a;
+  color: #fff;
+}
+
+.items-container {
+  min-height: 100px;
+  background: #444;
+  border-radius: 4px;
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #888;
+}
+
+.pause-buttons {
+  display: flex;
+  gap: 15px;
+  justify-content: center;
+  padding-top: 20px;
+  margin-top: auto;
+}
+
+.pause-btn {
+  padding: 12px 24px;
+  border: none;
+  border-radius: 4px;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.pause-btn.primary {
+  background: #4CAF50;
+  color: white;
+}
+
+.pause-btn.primary:hover {
+  background: #45a049;
+}
+
+.pause-btn.secondary {
+  background: #555;
+  color: white;
+}
+
+.pause-btn.secondary:hover {
+  background: #666;
+}
+</style>

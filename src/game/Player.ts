@@ -129,6 +129,9 @@ export class Player {
         let closestDistance = Infinity
 
         enemies.forEach(enemy => {
+            // Skip dying enemies
+            if (enemy.isDying()) return
+            
             const distance = Math.sqrt((enemy.x - this.x) ** 2 + (enemy.y - this.y) ** 2)
             if (distance <= weapon.range && distance < closestDistance) {
                 closestDistance = distance

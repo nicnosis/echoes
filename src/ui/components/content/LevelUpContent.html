@@ -1,0 +1,116 @@
+<div class="levelup-content">
+  <div id="levelup-title" class="levelup-title">Level Up!</div>
+  <p id="credits-remaining">Choose a stat to improve (1 remaining)</p>
+  
+  <div class="levelup-choices">
+    <div class="levelup-choice">
+      <div class="choice-emoji">❤️</div>
+      <div class="choice-name">Max HP</div>
+      <div class="choice-value">+10</div>
+      <button class="choice-select-btn stat-choice-btn" data-stat="health">Select</button>
+    </div>
+    <div class="levelup-choice">
+      <div class="choice-emoji">⚔️</div>
+      <div class="choice-name">Damage</div>
+      <div class="choice-value">+5</div>
+      <button class="choice-select-btn stat-choice-btn" data-stat="damage">Select</button>
+    </div>
+    <div class="levelup-choice">
+      <div class="choice-emoji">🛡️</div>
+      <div class="choice-name">Armor</div>
+      <div class="choice-value">+2</div>
+      <button class="choice-select-btn stat-choice-btn" data-stat="armor">Select</button>
+    </div>
+    <div class="levelup-choice">
+      <div class="choice-emoji">🏃</div>
+      <div class="choice-name">Move Speed</div>
+      <div class="choice-value">+3</div>
+      <button class="choice-select-btn stat-choice-btn" data-stat="speed">Select</button>
+    </div>
+  </div>
+</div>
+
+<style>
+.levelup-content {
+  text-align: center;
+  padding: 10px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.levelup-title {
+  font-size: 24px;
+  font-weight: bold;
+  color: #ffd700;
+  margin-bottom: 15px;
+}
+
+#credits-remaining {
+  font-size: 14px;
+  color: #ccc;
+  margin-bottom: 20px;
+}
+
+.levelup-choices {
+  display: flex;
+  flex-direction: row;
+  gap: 15px;
+  max-width: 100%;
+  margin: 0 auto;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.levelup-choice {
+  background: #333;
+  border-radius: 6px;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  border: 2px solid #555;
+  transition: border-color 0.2s;
+  flex: 1;
+  max-width: 150px;
+}
+
+.levelup-choice:hover {
+  border-color: #ffd700;
+}
+
+.choice-emoji {
+  font-size: 18px;
+}
+
+.choice-name {
+  font-size: 12px;
+  font-weight: bold;
+  color: white;
+  text-align: center;
+}
+
+.choice-value {
+  font-size: 11px;
+  color: #4CAF50;
+  font-weight: bold;
+}
+
+.choice-select-btn {
+  background: #4CAF50;
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 3px;
+  cursor: pointer;
+  font-size: 10px;
+  font-weight: bold;
+  width: 100%;
+}
+
+.choice-select-btn:hover {
+  background: #45a049;
+}
+</style>
