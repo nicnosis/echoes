@@ -1,0 +1,109 @@
+/* UnifiedUI.css */
+#unified-ui-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.8);
+  z-index: 1000;
+}
+
+.ui-content {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  gap: 20px;
+  box-sizing: border-box;
+}
+
+#dynamic-content {
+  flex: 1;
+  background: #2a2a2a;
+  border-radius: 6px;
+  padding: 15px;
+  color: white;
+  overflow-y: auto;
+}
+
+#stats-panel-container {
+  width: 250px;
+  background: #1a1a1a;
+  border-radius: 6px;
+  padding: 15px;
+  overflow-y: auto;
+}
+
+.hidden {
+  display: none;
+}
+
+/* Button styles */
+.btn-primary {
+  background: #4CAF50;
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 16px;
+}
+
+.btn-primary:hover {
+  background: #45a049;
+}
+
+.btn-secondary {
+  background: #555;
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 16px;
+}
+
+.btn-secondary:hover {
+  background: #666;
+}
+
+.btn-danger {
+  background: #f44336;
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 16px;
+}
+
+.btn-danger:hover {
+  background: #d32f2f;
+}
+
+/* Stat choice buttons */
+.stat-choice-btn {
+  display: block;
+  width: 100%;
+  margin: 10px 0;
+  padding: 15px;
+  background: #333;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 16px;
+}
+
+.stat-choice-btn:hover {
+  background: #444;
+}
+
+.stat-name {
+  font-weight: bold;
+}
+
+.stat-bonus {
+  float: right;
+  color: #4CAF50;
+}

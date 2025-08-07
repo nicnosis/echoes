@@ -31,7 +31,43 @@ export class UnifiedUI {
     await this.loadContentTemplates()
   }
 
+  private async loadCSS(): Promise<void> {
+    try {
+      // Check if CSS is already loaded
+      if (document.querySelector('link[href="/src/ui/components/UnifiedUI.css"]')) {
+        console.log('✅ UnifiedUI CSS already loaded')
+        return
+      }
+
+      // Create link element for CSS
+      const link = document.createElement('link')
+      link.rel = 'stylesheet'
+      link.type = 'text/css'
+      link.href = '/src/ui/components/UnifiedUI.css'
+      
+      // Add to document head
+      document.head.appendChild(link)
+      
+      // Wait for CSS to load
+      await new Promise<void>((resolve, reject) => {
+        link.onload = () => {
+          console.log('✅ UnifiedUI CSS loaded successfully')
+          resolve()
+        }
+        link.onerror = () => {
+          console.error('❌ Failed to load UnifiedUI CSS')
+          reject(new Error('Failed to load UnifiedUI CSS'))
+        }
+      })
+    } catch (error) {
+      console.error('Failed to load UnifiedUI CSS:', error)
+    }
+  }
+
   private async initializeContainer(): Promise<void> {
+    // Load CSS first
+    await this.loadCSS()
+    
     // Load main container HTML
     try {
       const response = await fetch('/src/ui/components/UnifiedUI.html')
