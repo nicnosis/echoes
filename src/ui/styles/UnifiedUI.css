@@ -24,12 +24,6 @@
   overflow-y: auto;
 }
 
-#stats-panel-container {
-  width: 250px;
-  background: #1a1a1a;
-  padding: 15px;
-  overflow-y: auto;
-}
 
 .hidden {
   display: none;

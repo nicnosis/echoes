@@ -32,35 +32,42 @@ export class UnifiedUI {
   }
 
   private async loadCSS(): Promise<void> {
-    try {
-      // Check if CSS is already loaded
-      if (document.querySelector('link[href="/src/ui/styles/UnifiedUI.css"]')) {
-        console.log('✅ UnifiedUI CSS already loaded')
-        return
-      }
+    const cssFiles = [
+      '/src/ui/styles/UnifiedUI.css',
+      '/src/ui/styles/StatsPanel.css'
+    ]
 
-      // Create link element for CSS
-      const link = document.createElement('link')
-      link.rel = 'stylesheet'
-      link.type = 'text/css'
-      link.href = '/src/ui/styles/UnifiedUI.css'
-      
-      // Add to document head
-      document.head.appendChild(link)
-      
-      // Wait for CSS to load
-      await new Promise<void>((resolve, reject) => {
-        link.onload = () => {
-          console.log('✅ UnifiedUI CSS loaded successfully')
-          resolve()
+    for (const cssFile of cssFiles) {
+      try {
+        // Check if CSS is already loaded
+        if (document.querySelector(`link[href="${cssFile}"]`)) {
+          console.log(`✅ ${cssFile} already loaded`)
+          continue
         }
-        link.onerror = () => {
-          console.error('❌ Failed to load UnifiedUI CSS')
-          reject(new Error('Failed to load UnifiedUI CSS'))
-        }
-      })
-    } catch (error) {
-      console.error('Failed to load UnifiedUI CSS:', error)
+
+        // Create link element for CSS
+        const link = document.createElement('link')
+        link.rel = 'stylesheet'
+        link.type = 'text/css'
+        link.href = cssFile
+        
+        // Add to document head
+        document.head.appendChild(link)
+        
+        // Wait for CSS to load
+        await new Promise<void>((resolve, reject) => {
+          link.onload = () => {
+            console.log(`✅ ${cssFile} loaded successfully`)
+            resolve()
+          }
+          link.onerror = () => {
+            console.error(`❌ Failed to load ${cssFile}`)
+            reject(new Error(`Failed to load ${cssFile}`))
+          }
+        })
+      } catch (error) {
+        console.error(`Failed to load ${cssFile}:`, error)
+      }
     }
   }
 

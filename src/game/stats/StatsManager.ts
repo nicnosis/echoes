@@ -34,7 +34,7 @@ export class StatsManager {
         lines.forEach(line => {
             if (line.trim()) {
                 const [category, order, key, displayName, hideInStatsPanel,
-                    description, isPercent, baseValue, minValue, maxValue] =
+                    description, isPercent, baseValue, minValue, maxValue, emoji] =
                     line.split(',').map(cell => cell.trim())
 
                 const statDef: StatDefinition = {
@@ -47,7 +47,8 @@ export class StatsManager {
                     isPercent: isPercent === 'TRUE',
                     baseValue: parseFloat(baseValue) || 0,
                     minValue: minValue ? parseFloat(minValue) : undefined,
-                    maxValue: maxValue ? parseFloat(maxValue) : undefined
+                    maxValue: maxValue ? parseFloat(maxValue) : undefined,
+                    emoji: emoji || ''
                 }
 
                 this.statDefinitions.set(key, statDef)
@@ -263,6 +264,7 @@ export class StatsManager {
         value: number
         formattedValue: string
         description: string
+        emoji: string
     }> {
         const stats: Array<any> = []
 
@@ -280,7 +282,8 @@ export class StatsManager {
                 displayName: statDef.displayName,
                 value,
                 formattedValue,
-                description: statDef.description
+                description: statDef.description,
+                emoji: statDef.emoji
             })
         })
 
@@ -305,7 +308,7 @@ export class StatsManager {
             const statElement = document.createElement('div')
             statElement.className = `stat-item ${stat.key}`
             statElement.innerHTML = `
-        <span class="stat-name">${stat.displayName}</span>
+        <span class="stat-name">${stat.emoji} ${stat.displayName}</span>
         <span class="stat-value">${stat.formattedValue}</span>
       `
             masterContainer.appendChild(statElement)

@@ -9,4 +9,5 @@ export interface StatDefinition {
   baseValue: number
   minValue?: number
   maxValue?: number
+  emoji: string
 } 
