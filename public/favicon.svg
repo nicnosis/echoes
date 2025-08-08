@@ -1,0 +1,13 @@
+<svg width="32" height="32" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+  <!-- Red triangle (top) -->
+  <polygon points="16,4 26,20 6,20" fill="#ff4444"/>
+  
+  <!-- Green triangle (bottom left) -->
+  <polygon points="6,20 16,28 16,12" fill="#44ff44"/>
+  
+  <!-- Blue triangle (bottom right) -->
+  <polygon points="26,20 16,28 16,12" fill="#4444ff"/>
+  
+  <!-- Small white center for contrast -->
+  <circle cx="16" cy="18" r="2" fill="white"/>
+</svg>

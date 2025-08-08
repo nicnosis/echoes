@@ -19,7 +19,6 @@
 #dynamic-content {
   flex: 1;
   background: #2a2a2a;
-  border-radius: 6px;
   padding: 15px;
   color: white;
   overflow-y: auto;
@@ -28,7 +27,6 @@
 #stats-panel-container {
   width: 250px;
   background: #1a1a1a;
-  border-radius: 6px;
   padding: 15px;
   overflow-y: auto;
 }
@@ -43,7 +41,6 @@
   color: white;
   border: none;
   padding: 12px 24px;
-  border-radius: 4px;
   cursor: pointer;
   font-size: 16px;
 }
@@ -57,7 +54,6 @@
   color: white;
   border: none;
   padding: 12px 24px;
-  border-radius: 4px;
   cursor: pointer;
   font-size: 16px;
 }
@@ -71,7 +67,6 @@
   color: white;
   border: none;
   padding: 12px 24px;
-  border-radius: 4px;
   cursor: pointer;
   font-size: 16px;
 }
@@ -89,7 +84,6 @@
   background: #333;
   color: white;
   border: none;
-  border-radius: 4px;
   cursor: pointer;
   font-size: 16px;
 }
