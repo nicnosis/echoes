@@ -166,15 +166,23 @@ export class Player {
             const spriteX = this.x - this.width / 2
             const spriteY = this.y - this.height / 2
             
-            // Apply red tint when taking damage
             if (this.damageFlashTimer > 0) {
+                // When taking damage, use multiply blend to tint only visible pixels
+                renderer.ctx.save()
+                
+                // Draw sprite normally first
+                renderer.drawImage(this.torsoSprite, spriteX, spriteY, this.width, this.height)
+                
+                // Use multiply blend mode - only affects non-transparent pixels
                 renderer.ctx.globalCompositeOperation = 'multiply'
-                renderer.ctx.fillStyle = '#ff0000'
+                renderer.ctx.fillStyle = '#ff6666' // Light red for multiply effect
                 renderer.ctx.fillRect(spriteX, spriteY, this.width, this.height)
-                renderer.ctx.globalCompositeOperation = 'source-over'
+                
+                renderer.ctx.restore()
+            } else {
+                // Draw sprite normally
+                renderer.drawImage(this.torsoSprite, spriteX, spriteY, this.width, this.height)
             }
-            
-            renderer.drawImage(this.torsoSprite, spriteX, spriteY, this.width, this.height)
         } else {
             // Fallback: render as rectangle with damage flash effect
             const color = this.damageFlashTimer > 0 ? '#ff0000' : this.getColor()
