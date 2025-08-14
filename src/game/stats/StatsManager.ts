@@ -89,7 +89,9 @@ export class StatsManager {
             { key: 'range', baseValue: 0 },
             { key: 'armor', baseValue: 0 },
             { key: 'dodge', baseValue: 0 },
-            { key: 'moveSpeed', baseValue: 0 }
+            { key: 'moveSpeed', baseValue: 0 },
+            { key: 'interest', baseValue: 0 },
+            { key: 'luck', baseValue: 0 }
         ]
 
         defaultStats.forEach(stat => {
@@ -129,6 +131,32 @@ export class StatsManager {
             }
         })
         return result
+    }
+
+    // Calculate gear stats from body parts (called during stat recalculation)
+    calculateGearStatsFromBodyParts(bodyParts: any[]): Record<string, number> {
+        const bodyStats: Record<string, number> = {}
+        
+        // Initialize all stat keys to 0
+        this.statDefinitions.forEach((statDef, key) => {
+            if (statDef.category !== 'core') {
+                bodyStats[key] = 0
+            }
+        })
+        
+        // Add stats from each body part
+        bodyParts.forEach(bodyPart => {
+            if (bodyPart.stats) {
+                Object.entries(bodyPart.stats).forEach(([key, value]) => {
+                    if (this.statDefinitions.has(key) && typeof value === 'number') {
+                        bodyStats[key] = (bodyStats[key] || 0) + value
+                        console.log(`Added ${value} ${key} from ${bodyPart.type}`)
+                    }
+                })
+            }
+        })
+        
+        return bodyStats
     }
 
     get total(): Record<string, number> {
@@ -194,7 +222,25 @@ export class StatsManager {
         this.addGearStats(negativeStats)
     }
 
-    // XP and leveling (now part of unified stats)
+    // Body parts management (body parts are treated as gear)
+    addBodyPartStats(bodyPartStats: Record<string, number>): void {
+        this.addGearStats(bodyPartStats)
+        console.log(`Added body part stats to gear:`, bodyPartStats)
+    }
+
+    removeBodyPartStats(bodyPartStats: Record<string, number>): void {
+        const negativeStats: Record<string, number> = {}
+        Object.entries(bodyPartStats).forEach(([key, value]) => {
+            negativeStats[key] = -value
+        })
+        this.addGearStats(negativeStats)
+        console.log(`Removed body part stats from gear:`, bodyPartStats)
+    }
+
+    // =============================================================================
+    // XP AND LEVELING
+    // =============================================================================
+    
     gainXP(amount: number): boolean {
         const currentXP = this.xp
         const currentLevel = this.level
@@ -221,6 +267,16 @@ export class StatsManager {
 
         // XP is already at the correct level, no need to reset
         // The XP table handles the progression correctly
+    }
+
+    // Update gear stats from body parts and recalculate
+    updateGearFromBodyParts(bodyParts: any[]): void {
+        const bodyStats = this.calculateGearStatsFromBodyParts(bodyParts)
+        this.gearStats.clear()
+        Object.entries(bodyStats).forEach(([key, value]) => {
+            this.gearStats.set(key, value)
+        })
+        this.recalculateStats()
     }
 
     // Stat calculation with bounds checking
@@ -294,7 +350,9 @@ export class StatsManager {
         })
     }
 
-    // Master panel management for UI
+    // =============================================================================
+    // MASTER PANEL MANAGEMENT FOR UI
+    // =============================================================================
     updateMasterStatsPanel(masterContainer: HTMLElement): void {
 
         const displayStats = this.getDisplayStats()
