@@ -424,10 +424,10 @@ export class Game {
       const enemyTop = enemy.y - enemy.height / 2
       const enemyBottom = enemy.y + enemy.height / 2
 
-      const playerLeft = this.player.x - this.player.radius
-      const playerRight = this.player.x + this.player.radius
-      const playerTop = this.player.y - this.player.radius
-      const playerBottom = this.player.y + this.player.radius
+      const playerLeft = this.player.x - this.player.width / 2
+      const playerRight = this.player.x + this.player.width / 2
+      const playerTop = this.player.y - this.player.height / 2
+      const playerBottom = this.player.y + this.player.height / 2
 
       if (enemyLeft < playerRight && enemyRight > playerLeft &&
           enemyTop < playerBottom && enemyBottom > playerTop) {

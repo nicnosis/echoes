@@ -9,7 +9,8 @@ import { XPTable } from './stats/XPTable'
 export class Player {
     public x: number
     public y: number
-    public radius: number = 15
+    public width: number = 30  // was radius * 2
+    public height: number = 30 // was radius * 2
 
     // Unified stats system - ALL stats go through this
     public stats: StatsManager
@@ -37,6 +38,10 @@ export class Player {
 
     // Equipment system
     public equippedItems: any[] = [] // Will be properly typed later
+    
+    // Sprite rendering
+    private torsoSprite: HTMLImageElement | null = null
+    private spriteLoaded: boolean = false
 
     constructor(x: number, y: number) {
         this.x = x
@@ -47,6 +52,9 @@ export class Player {
 
         // Create dual wands
         this.weapons.push(new Weapon('wand', 500, 100, 5))
+        
+        // Load torso sprite
+        this.loadTorsoSprite()
     }
 
     update(deltaTime: number, inputState: InputState, canvasWidth: number, canvasHeight: number, enemies: Enemy[]) {
@@ -87,8 +95,8 @@ export class Player {
         this.y += dy * effectiveMoveSpeed * (deltaTime / 1000)
 
         // Keep player in bounds
-        this.x = Math.max(this.radius, Math.min(canvasWidth - this.radius, this.x))
-        this.y = Math.max(this.radius, Math.min(canvasHeight - this.radius, this.y))
+        this.x = Math.max(this.width / 2, Math.min(canvasWidth - this.width / 2, this.x))
+        this.y = Math.max(this.height / 2, Math.min(canvasHeight - this.height / 2, this.y))
 
         // Update weapons and projectiles
         this.updateWeapons(deltaTime, enemies)
@@ -152,9 +160,29 @@ export class Player {
     }
 
     render(renderer: Renderer) {
-        // Render player with damage flash effect
-        const color = this.damageFlashTimer > 0 ? '#ff0000' : this.getColor()
-        renderer.drawRect(this.x - this.radius, this.y - this.radius, this.radius * 2, this.radius * 2, color)
+        // Render player sprite or fallback rectangle
+        if (this.spriteLoaded && this.torsoSprite) {
+            // Calculate sprite position (centered)
+            const spriteX = this.x - this.width / 2
+            const spriteY = this.y - this.height / 2
+            
+            // Apply red tint when taking damage
+            if (this.damageFlashTimer > 0) {
+                renderer.ctx.globalCompositeOperation = 'multiply'
+                renderer.ctx.fillStyle = '#ff0000'
+                renderer.ctx.fillRect(spriteX, spriteY, this.width, this.height)
+                renderer.ctx.globalCompositeOperation = 'source-over'
+            }
+            
+            renderer.drawImage(this.torsoSprite, spriteX, spriteY, this.width, this.height)
+        } else {
+            // Fallback: render as rectangle with damage flash effect
+            const color = this.damageFlashTimer > 0 ? '#ff0000' : this.getColor()
+            renderer.drawRect(this.x - this.width / 2, this.y - this.height / 2, this.width, this.height, color)
+        }
+        
+        // Draw cyan hitbox outline (box) - stroke only
+        renderer.drawRectStroke(this.x - this.width / 2, this.y - this.height / 2, this.width, this.height, '#00ffff', 2)
 
         // Render weapon ranges
         this.weapons.forEach(weapon => {
@@ -224,6 +252,20 @@ export class Player {
         }
         return false
     }
+    
+    // Load torso sprite from public folder
+    private loadTorsoSprite(): void {
+        this.torsoSprite = new Image()
+        this.torsoSprite.onload = () => {
+            this.spriteLoaded = true
+            console.log('Player torso sprite loaded successfully')
+        }
+        this.torsoSprite.onerror = () => {
+            console.error('Failed to load player torso sprite')
+            this.spriteLoaded = false
+        }
+        this.torsoSprite.src = '/player/torso.png'
+    }
 
 
 
@@ -255,10 +297,10 @@ export class Player {
 
     getBounds() {
         return {
-            left: this.x - this.radius,
-            right: this.x + this.radius,
-            top: this.y - this.radius,
-            bottom: this.y + this.radius
+            left: this.x - this.width / 2,
+            right: this.x + this.width / 2,
+            top: this.y - this.height / 2,
+            bottom: this.y + this.height / 2
         }
     }
 

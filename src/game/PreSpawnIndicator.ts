@@ -32,7 +32,7 @@ export class PreSpawnIndicator {
             const dx = this.x - player.x
             const dy = this.y - player.y
             const distance = Math.sqrt(dx * dx + dy * dy)
-            const collisionDistance = this.size / 2 + player.radius
+            const collisionDistance = this.size / 2 + Math.min(player.width, player.height) / 2
 
             if (distance < collisionDistance) {
                 // Player is in collision, reset and move
