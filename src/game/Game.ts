@@ -468,7 +468,8 @@ export class Game {
         const dx = projectile.x - enemy.x
         const dy = projectile.y - enemy.y
         const distance = Math.sqrt(dx * dx + dy * dy)
-        if (distance <= enemy.radius - projectile.size / 2) {
+        const enemyRadius = Math.min(enemy.width, enemy.height) / 2 // Use smaller dimension as radius
+        if (distance <= enemyRadius - projectile.size / 2) {
           this.player.projectiles.splice(i, 1)
           // Critical hit logic
           let isCrit = false

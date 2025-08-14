@@ -30,6 +30,12 @@ export class Renderer {
     this.ctx.fillRect(x, y, width, height)
   }
 
+  drawRectStroke(x: number, y: number, width: number, height: number, color: string, lineWidth: number = 1) {
+    this.ctx.strokeStyle = color
+    this.ctx.lineWidth = lineWidth
+    this.ctx.strokeRect(x, y, width, height)
+  }
+
   drawCircle(x: number, y: number, radius: number, color: string, lineWidth: number = 0, strokeOnly: boolean = false) {
     this.ctx.beginPath()
     this.ctx.arc(x, y, radius, 0, Math.PI * 2)
@@ -42,6 +48,23 @@ export class Renderer {
       this.ctx.fillStyle = color
       this.ctx.fill()
     }
+  }
+
+  // Draw image with optional flipping and scaling
+  drawImage(image: HTMLImageElement, x: number, y: number, width?: number, height?: number, flipHorizontal: boolean = false) {
+    this.ctx.save()
+    
+    const drawWidth = width || image.width
+    const drawHeight = height || image.height
+    
+    if (flipHorizontal) {
+      this.ctx.scale(-1, 1)
+      this.ctx.drawImage(image, -x - drawWidth, y, drawWidth, drawHeight)
+    } else {
+      this.ctx.drawImage(image, x, y, drawWidth, drawHeight)
+    }
+    
+    this.ctx.restore()
   }
 
   // Draw text with proper alpha handling
