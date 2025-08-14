@@ -134,6 +134,8 @@ The CSV currently defines **17 primary stats**:
 15. **Armor** - Damage reduction (starts at 0)
 16. **Dodge** - Percent dodge chance (starts at 0, displayed as %)
 17. **Speed** - Percent movement speed increase (starts at 0, displayed as %)
+18. **Interest** - Percent interest. At the end of each wave, player's soma is multiplied by (1 + Interest).
+19. **Luck** - Improves quality of item and level up bonuses.
 
 ## Usage in Code
 
@@ -143,5 +145,3 @@ The StatsManager loads this CSV to:
 - Format display values (percentages vs raw numbers)
 - Control UI visibility and ordering
 - Provide descriptions for tooltips and help text
-
-# To-do:

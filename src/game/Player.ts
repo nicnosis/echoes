@@ -5,6 +5,8 @@ import { Weapon } from './Weapon'
 import { Enemy } from './Enemy'
 import { StatsManager } from './stats/StatsManager'
 import { XPTable } from './stats/XPTable'
+import { BodyPart, BODY_POSITIONS } from './BodyPart'
+import { BodyPartLoader } from './BodyPartLoader'
 
 export class Player {
     public x: number
@@ -42,6 +44,12 @@ export class Player {
     // Sprite rendering
     private torsoSprite: HTMLImageElement | null = null
     private spriteLoaded: boolean = false
+    
+    // Body parts system
+    public body: BodyPart[] = []
+    
+    // Facing direction
+    public facingRight: boolean = true
 
     constructor(x: number, y: number) {
         this.x = x
@@ -55,6 +63,9 @@ export class Player {
         
         // Load torso sprite
         this.loadTorsoSprite()
+        
+        // Initialize default body parts (async)
+        this.initializeBodyParts()
     }
 
     update(deltaTime: number, inputState: InputState, canvasWidth: number, canvasHeight: number, enemies: Enemy[]) {
@@ -81,8 +92,14 @@ export class Player {
         
         if (inputState.up) dy -= 1
         if (inputState.down) dy += 1
-        if (inputState.left) dx -= 1
-        if (inputState.right) dx += 1
+        if (inputState.left) {
+            dx -= 1
+            this.facingRight = false
+        }
+        if (inputState.right) {
+            dx += 1
+            this.facingRight = true
+        }
         
         // Normalize diagonal movement
         if (dx !== 0 && dy !== 0) {
@@ -160,37 +177,11 @@ export class Player {
     }
 
     render(renderer: Renderer) {
-        // Render player sprite or fallback rectangle
-        if (this.spriteLoaded && this.torsoSprite) {
-            // Calculate sprite position (centered)
-            const spriteX = this.x - this.width / 2
-            const spriteY = this.y - this.height / 2
-            
-            if (this.damageFlashTimer > 0) {
-                // When taking damage, use multiply blend to tint only visible pixels
-                renderer.ctx.save()
-                
-                // Draw sprite normally first
-                renderer.drawImage(this.torsoSprite, spriteX, spriteY, this.width, this.height)
-                
-                // Use multiply blend mode - only affects non-transparent pixels
-                renderer.ctx.globalCompositeOperation = 'multiply'
-                renderer.ctx.fillStyle = '#ff6666' // Light red for multiply effect
-                renderer.ctx.fillRect(spriteX, spriteY, this.width, this.height)
-                
-                renderer.ctx.restore()
-            } else {
-                // Draw sprite normally
-                renderer.drawImage(this.torsoSprite, spriteX, spriteY, this.width, this.height)
-            }
-        } else {
-            // Fallback: render as rectangle with damage flash effect
-            const color = this.damageFlashTimer > 0 ? '#ff0000' : this.getColor()
-            renderer.drawRect(this.x - this.width / 2, this.y - this.height / 2, this.width, this.height, color)
-        }
-        
         // Draw cyan hitbox outline (box) - stroke only
         renderer.drawRectStroke(this.x - this.width / 2, this.y - this.height / 2, this.width, this.height, '#00ffff', 2)
+        
+        // Render body part sprites and debug nodes
+        this.renderBodyPartNodes(renderer)
 
         // Render weapon ranges
         this.weapons.forEach(weapon => {
@@ -272,7 +263,66 @@ export class Player {
             console.error('Failed to load player torso sprite')
             this.spriteLoaded = false
         }
-        this.torsoSprite.src = '/player/torso.png'
+        this.torsoSprite.src = '/bodyparts/torso.png'
+    }
+    
+    // Initialize default body parts from CSV
+    private async initializeBodyParts(): Promise<void> {
+        // Load body parts from CSV
+        await BodyPartLoader.loadBodyParts()
+        
+        // Get specific body parts by ID
+        const frogHead = BodyPartLoader.getBodyPart('froghead')
+        const torso = BodyPartLoader.getBodyPart('torso')
+        
+        this.body = []
+        if (frogHead) this.body.push(frogHead)
+        if (torso) this.body.push(torso)
+        
+        console.log('Initialized body parts from CSV:', this.body.map(bp => `${bp.type} (${Object.keys(bp.stats).length} stats)`).join(', '))
+        
+        // Log the actual stats for debugging
+        this.body.forEach(part => {
+            console.log(`${part.type} stats:`, part.stats)
+        })
+    }
+    
+    // Render body part sprites and debug nodes
+    private renderBodyPartNodes(renderer: Renderer): void {
+        this.body.forEach(bodyPart => {
+            const position = BODY_POSITIONS[bodyPart.type as keyof typeof BODY_POSITIONS]
+            if (position) {
+                const worldX = this.x + position.x
+                const worldY = this.y + position.y
+                
+                // Try to render the actual sprite
+                if (bodyPart.isLoaded()) {
+                    const sprite = bodyPart.getSprite()
+                    if (sprite) {
+                        // Render sprite centered at the node position with facing direction
+                        const spriteSize = 30 // Same size as torso for now
+                        const spriteX = worldX - spriteSize / 2
+                        const spriteY = worldY - spriteSize / 2
+                        
+                        // Apply damage flash effect
+                        if (this.damageFlashTimer > 0) {
+                            renderer.ctx.save()
+                            renderer.drawImage(sprite, spriteX, spriteY, spriteSize, spriteSize, !this.facingRight)
+                            // Use multiply blend mode for red tint
+                            renderer.ctx.globalCompositeOperation = 'multiply'
+                            renderer.ctx.fillStyle = '#ff6666'
+                            renderer.ctx.fillRect(spriteX, spriteY, spriteSize, spriteSize)
+                            renderer.ctx.restore()
+                        } else {
+                            renderer.drawImage(sprite, spriteX, spriteY, spriteSize, spriteSize, !this.facingRight)
+                        }
+                    }
+                }
+                
+                // Draw pink debug circle (stroke only) - always show for debugging
+                renderer.drawCircle(worldX, worldY, 4, '#ff69b4', 2, true)
+            }
+        })
     }
 
 

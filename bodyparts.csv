@@ -1,0 +1,3 @@
+id,displayName,type,imgFileName,hp,hpRegen,lifeSteal,damage,red,green,blue,yellow,attackSpeed,critChance,range,armor,dodge,moveSpeed,interest,luck
+froghead,Frog Head,head,froghead.png,5,,,,,,,,,,,,8,5,,
+torso,Oblong Torso,torso,torso.png,10,,,,,,,,,10,,1,,,,
