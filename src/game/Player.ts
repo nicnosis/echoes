@@ -177,7 +177,7 @@ export class Player {
     }
 
     render(renderer: Renderer) {
-        // Draw cyan hitbox outline (box) - stroke only
+        // Draw cyan hitbox outline (box) - stroke only (drawOrder: 950)
         renderer.drawRectStroke(this.x - this.width / 2, this.y - this.height / 2, this.width, this.height, '#00ffff', 2)
         
         // Render body part sprites and debug nodes
@@ -274,10 +274,12 @@ export class Player {
         // Get specific body parts by ID
         const frogHead = BodyPartLoader.getBodyPart('froghead')
         const torso = BodyPartLoader.getBodyPart('torso')
+        const frogArms = BodyPartLoader.getBodyPart('frogarms')
         
         this.body = []
-        if (frogHead) this.body.push(frogHead)
+        if (frogArms) this.body.push(frogArms)
         if (torso) this.body.push(torso)
+        if (frogHead) this.body.push(frogHead)
         
         console.log('Initialized body parts from CSV:', this.body.map(bp => `${bp.type} (${Object.keys(bp.stats).length} stats)`).join(', '))
         
@@ -287,42 +289,78 @@ export class Player {
         })
     }
     
-    // Render body part sprites and debug nodes
+    // Render body part sprites and debug nodes in draw order
     private renderBodyPartNodes(renderer: Renderer): void {
-        this.body.forEach(bodyPart => {
-            const position = BODY_POSITIONS[bodyPart.type as keyof typeof BODY_POSITIONS]
-            if (position) {
-                const worldX = this.x + position.x
-                const worldY = this.y + position.y
-                
-                // Try to render the actual sprite
-                if (bodyPart.isLoaded()) {
-                    const sprite = bodyPart.getSprite()
-                    if (sprite) {
-                        // Render sprite centered at the node position with facing direction
-                        const spriteSize = 30 // Same size as torso for now
-                        const spriteX = worldX - spriteSize / 2
-                        const spriteY = worldY - spriteSize / 2
-                        
-                        // Apply damage flash effect
-                        if (this.damageFlashTimer > 0) {
-                            renderer.ctx.save()
-                            renderer.drawImage(sprite, spriteX, spriteY, spriteSize, spriteSize, !this.facingRight)
-                            // Use multiply blend mode for red tint
-                            renderer.ctx.globalCompositeOperation = 'multiply'
-                            renderer.ctx.fillStyle = '#ff6666'
-                            renderer.ctx.fillRect(spriteX, spriteY, spriteSize, spriteSize)
-                            renderer.ctx.restore()
-                        } else {
-                            renderer.drawImage(sprite, spriteX, spriteY, spriteSize, spriteSize, !this.facingRight)
-                        }
-                    }
-                }
-                
-                // Draw pink debug circle (stroke only) - always show for debugging
-                renderer.drawCircle(worldX, worldY, 4, '#ff69b4', 2, true)
-            }
+        // Create array of body parts with their positions and sort by drawOrder
+        const sortedBodyParts = this.body
+            .map(bodyPart => ({
+                bodyPart,
+                position: BODY_POSITIONS[bodyPart.type as keyof typeof BODY_POSITIONS]
+            }))
+            .filter(item => item.position)
+            .sort((a, b) => a.position.drawOrder - b.position.drawOrder)
+
+        // Render each body part in draw order
+        sortedBodyParts.forEach(({ bodyPart, position }) => {
+            this.renderBodyPart(renderer, bodyPart, position)
         })
+    }
+
+    // Render a single body part (with special handling for arms)
+    private renderBodyPart(renderer: Renderer, bodyPart: BodyPart, position: any): void {
+        if (bodyPart.type === 'arms') {
+            // Render arms symmetrically at left and right positions
+            this.renderArmSprite(renderer, bodyPart, this.x - 15, this.y + position.y) // Left arm
+            this.renderArmSprite(renderer, bodyPart, this.x + 15, this.y + position.y) // Right arm
+            
+            // Debug circles for both arms (drawOrder: 960)
+            renderer.drawCircle(this.x - 15, this.y + position.y, 4, '#ff69b4', 2, true)
+            renderer.drawCircle(this.x + 15, this.y + position.y, 4, '#ff69b4', 2, true)
+        } else {
+            // Regular single body part
+            const worldX = this.x + position.x
+            const worldY = this.y + position.y
+            
+            this.renderSingleSprite(renderer, bodyPart, worldX, worldY)
+            
+            // Debug circle (drawOrder: 960)
+            renderer.drawCircle(worldX, worldY, 4, '#ff69b4', 2, true)
+        }
+    }
+
+    // Render arm sprite at specific position
+    private renderArmSprite(renderer: Renderer, bodyPart: BodyPart, x: number, y: number): void {
+        if (bodyPart.isLoaded()) {
+            const sprite = bodyPart.getSprite()
+            if (sprite) {
+                this.renderSingleSprite(renderer, bodyPart, x, y)
+            }
+        }
+    }
+
+    // Render a sprite at given world coordinates
+    private renderSingleSprite(renderer: Renderer, bodyPart: BodyPart, worldX: number, worldY: number): void {
+        if (bodyPart.isLoaded()) {
+            const sprite = bodyPart.getSprite()
+            if (sprite) {
+                const spriteSize = 30
+                const spriteX = worldX - spriteSize / 2
+                const spriteY = worldY - spriteSize / 2
+                
+                // Apply damage flash effect
+                if (this.damageFlashTimer > 0) {
+                    renderer.ctx.save()
+                    renderer.drawImage(sprite, spriteX, spriteY, spriteSize, spriteSize, !this.facingRight)
+                    // Use multiply blend mode for red tint
+                    renderer.ctx.globalCompositeOperation = 'multiply'
+                    renderer.ctx.fillStyle = '#ff6666'
+                    renderer.ctx.fillRect(spriteX, spriteY, spriteSize, spriteSize)
+                    renderer.ctx.restore()
+                } else {
+                    renderer.drawImage(sprite, spriteX, spriteY, spriteSize, spriteSize, !this.facingRight)
+                }
+            }
+        }
     }
 
 

@@ -165,18 +165,23 @@ export class Game {
     // Clear canvas
     this.renderer.clear()
     
-    // Render game objects (always visible)
-    this.player.render(this.renderer)
-    this.enemies.forEach(enemy => enemy.render(this.renderer))
+    // Render game objects in draw order
+    // Soma (drawOrder: 50) - on ground, behind everything
     this.somaList.forEach(soma => soma.render(this.renderer))
     
-    // Render spawn manager (pre-spawn indicators)
-    this.spawnManager.render(this.renderer)
+    // Enemies (drawOrder: 100)
+    this.enemies.forEach(enemy => enemy.render(this.renderer))
     
-    // Render player projectiles
+    // Player (drawOrder: 205-220)
+    this.player.render(this.renderer)
+    
+    // Projectiles (drawOrder: 300) - flying above characters
     for (const projectile of this.player.projectiles) {
       projectile.render(this.renderer)
     }
+    
+    // Spawn manager indicators (should be high like debug)
+    this.spawnManager.render(this.renderer)
     
     // Render floating texts
     this.floatingTexts.forEach(floatingText => floatingText.render(this.renderer))

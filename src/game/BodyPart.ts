@@ -42,11 +42,10 @@ export class BodyPart {
     }
 }
 
-// Hard-coded positions for body part debug nodes (relative to player center)
+// Hard-coded positions for body part nodes (relative to player center) with draw order
 export const BODY_POSITIONS = {
-    head: { x: 0, y: -20 },
-    torso: { x: 0, y: 0 },
-    legs: { x: 0, y: 15 },
-    leftArm: { x: -15, y: -5 },
-    rightArm: { x: 15, y: -5 }
+    arms: { x: 0, y: -5, drawOrder: 205 },
+    torso: { x: 0, y: 0, drawOrder: 210 },
+    head: { x: 0, y: -20, drawOrder: 220 },
+    legs: { x: 0, y: 15, drawOrder: 215 }
 }

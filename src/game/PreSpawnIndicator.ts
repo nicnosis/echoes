@@ -3,12 +3,12 @@ import { Player } from './Player'
 
 export class PreSpawnIndicator {
     private static readonly SPAWN_DURATION = 1500 // 1500ms countdown
-    private static readonly FLASH_INTERVAL = 150 // Flash every 150ms
+    private static readonly PULSE_SPEED = 0.008 // Fast sine wave speed (higher = faster)
 
     public x: number
     public y: number
     public timer: number = PreSpawnIndicator.SPAWN_DURATION
-    public flashTimer: number = 0
+    public pulseTimer: number = 0
     public isActive: boolean = true
     public size: number = 24 // Same as enemy side length (radius * 2)
 
@@ -16,7 +16,7 @@ export class PreSpawnIndicator {
         this.x = x
         this.y = y
         this.timer = PreSpawnIndicator.SPAWN_DURATION
-        this.flashTimer = 0
+        this.pulseTimer = 0
         this.isActive = true
     }
 
@@ -24,7 +24,7 @@ export class PreSpawnIndicator {
         if (!this.isActive) return false
 
         this.timer -= deltaTime
-        this.flashTimer += deltaTime
+        this.pulseTimer += deltaTime
 
         // Check if timer expired
         if (this.timer <= 0) {
@@ -50,7 +50,7 @@ export class PreSpawnIndicator {
 
     private resetAndMove(player: Player) {
         this.timer = PreSpawnIndicator.SPAWN_DURATION
-        this.flashTimer = 0
+        this.pulseTimer = 0
 
         // Move to new random location
         const newLocation = this.generateRandomLocation(player)
@@ -69,17 +69,24 @@ export class PreSpawnIndicator {
     render(renderer: Renderer) {
         if (!this.isActive) return
 
-        // Flash effect - only render when flashTimer is in visible phase
-        const flashPhase = Math.floor(this.flashTimer / PreSpawnIndicator.FLASH_INTERVAL) % 2
-        if (flashPhase === 0) return // Skip rendering during "off" phase
+        // Sine wave pulse effect
+        const sineValue = Math.sin(this.pulseTimer * PreSpawnIndicator.PULSE_SPEED)
+        const normalizedSine = (sineValue + 1) / 2 // Convert from [-1,1] to [0,1]
+        
+        // Pulse size: 75% to 100% (0.75 to 1.0) - more dramatic
+        const sizeMultiplier = 0.80 + (normalizedSine * 0.20)
+        const currentSize = this.size * sizeMultiplier
+        
+        // Pulse opacity: 50% to 100% (0.5 to 1.0) - more dramatic
+        const opacity = 0.5 + (normalizedSine * 0.5)
 
-        // Draw equilateral triangle outline
-        const height = this.size * Math.sqrt(3) / 2
-        const halfSize = this.size / 2
+        // Draw equilateral triangle outline with pulsing size
+        const height = currentSize * Math.sqrt(3) / 2
+        const halfSize = currentSize / 2
 
         const ctx = (renderer as any).ctx
         ctx.save()
-        ctx.strokeStyle = '#ffff00' // Yellow
+        ctx.strokeStyle = `rgba(255, 255, 0, ${opacity})` // Yellow with pulsing opacity
         ctx.lineWidth = 2
         ctx.beginPath()
 
