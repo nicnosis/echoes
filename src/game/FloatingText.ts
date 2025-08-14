@@ -1,6 +1,7 @@
 import { Renderer } from '../render/Renderer'
 
-export class DamageNumber {
+// FloatingText class for displaying damage numbers, level ups, and status messages
+export class FloatingText {
     public x: number
     public y: number
     public damage: number

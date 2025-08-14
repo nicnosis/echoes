@@ -178,9 +178,10 @@ export class Player {
         renderer.drawCircle(this.x, this.y, this.pickupRadius, '#00ff00', 1, true)
     }
 
-    takeDamage(amount: number = 1): boolean {
+    // Take damage and return actual damage dealt (0 if blocked)
+    takeDamage(amount: number = 1): number {
         if (this.isInvulnerable) {
-            return false
+            return 0
         }
 
         // Apply armor reduction
@@ -191,7 +192,7 @@ export class Player {
         // Check for dodge
         const dodgeChance = this.stats.total.dodge || 0
         if (Math.random() * 100 < dodgeChance) {
-            return false // Dodged!
+            return 0 // Dodged!
         }
 
         const currentHP = this.stats.getCurrentHP()
@@ -212,7 +213,7 @@ export class Player {
 
 
 
-        return true
+        return finalDamage
     }
 
     gainXP(amount: number) {

@@ -51,7 +51,8 @@ export class Enemy {
         return `hsla(${normalizedHue}, ${saturation}%, ${lightness}%, 0.85)`
     }
 
-    update(deltaTime: number, player: Player) {
+    // Update enemy behavior 
+    update(deltaTime: number, player: Player): void {
         const dt = deltaTime / 1000
 
         if (this.dying) {
@@ -101,26 +102,7 @@ export class Enemy {
     private checkPlayerCollision(player: Player, deltaTime: number) {
         if (this.dying) return // Can't damage player while dying
 
-        // Rectangle collision detection
-        const enemyLeft = this.x - this.width / 2
-        const enemyRight = this.x + this.width / 2
-        const enemyTop = this.y - this.height / 2
-        const enemyBottom = this.y + this.height / 2
-
-        const playerLeft = player.x - player.radius
-        const playerRight = player.x + player.radius
-        const playerTop = player.y - player.radius
-        const playerBottom = player.y + player.radius
-
-        if (enemyLeft < playerRight && enemyRight > playerLeft &&
-            enemyTop < playerBottom && enemyBottom > playerTop) {
-            // Check damage cooldown
-            const currentTime = Date.now()
-            if (currentTime - this.lastDamageTime >= this.damageCooldown) {
-                player.takeDamage(1)
-                this.lastDamageTime = currentTime
-            }
-        }
+        // Collision detection moved to Game.checkCollisions()
     }
 
     render(renderer: Renderer) {

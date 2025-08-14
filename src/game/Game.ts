@@ -6,6 +6,7 @@ import { Soma } from './Soma'
 import { SpawnManager } from './SpawnManager'
 import { UnifiedUI, UIScreen } from '../ui/components/UnifiedUI'
 import { HUD } from '../ui/components/HUD'
+import { FloatingText } from './FloatingText'
 
 enum GamePhase {
   WAVE = 'wave',
@@ -34,6 +35,7 @@ export class Game {
   private player: Player
   private enemies: Enemy[] = []
   private somaList: Soma[] = []
+  private floatingTexts: FloatingText[] = []
   
   // Systems
   private spawnManager: SpawnManager
@@ -176,6 +178,9 @@ export class Game {
       projectile.render(this.renderer)
     }
     
+    // Render floating texts
+    this.floatingTexts.forEach(floatingText => floatingText.render(this.renderer))
+    
     // Render wave timer during wave phase
     if (this.gamePhase === GamePhase.WAVE && this.waveIndex < this.waveData.length) {
       const timerText = `Wave ${this.waveData[this.waveIndex].wave}: ${Math.ceil(this.waveTimer)}s`
@@ -208,6 +213,7 @@ export class Game {
     // Update game objects
     this.updateEnemies(deltaTime)
     this.updateSoma(deltaTime)
+    this.updateFloatingTexts(deltaTime)
     this.player.update(deltaTime, this.inputManager.inputState, this.canvas.width, this.canvas.height, this.enemies)
     
     // Update HUD during wave gameplay
@@ -371,6 +377,11 @@ export class Game {
     this.somaList = this.somaList.filter(soma => !soma.collected)
   }
 
+  private updateFloatingTexts(deltaTime: number): void {
+    // Update floating texts and remove expired ones
+    this.floatingTexts = this.floatingTexts.filter(floatingText => floatingText.update(deltaTime))
+  }
+
   private checkCollisions(): void {
     // Player vs Soma (collection) - using existing logic from old game
     for (let i = this.somaList.length - 1; i >= 0; i--) {
@@ -394,6 +405,8 @@ export class Game {
         // Only log level ups, not every soma pickup
         if (leveledUp) {
           console.log(`🎉 LEVEL UP! Now level ${this.player.stats.level}`)
+          // Create floating text for level up
+          this.floatingTexts.push(new FloatingText(this.player.x, this.player.y - 30, 0, false, 'Level Up!'))
         }
       }
     }
@@ -401,7 +414,40 @@ export class Game {
     // Player projectiles vs Enemies
     this.checkProjectileCollisions()
     
-    // TODO: Player vs Enemies (damage)
+    // Player vs Enemies (damage)
+    this.enemies.forEach(enemy => {
+      if (enemy.isDying()) return // Can't damage player while dying
+      
+      // Rectangle collision detection  
+      const enemyLeft = enemy.x - enemy.width / 2
+      const enemyRight = enemy.x + enemy.width / 2
+      const enemyTop = enemy.y - enemy.height / 2
+      const enemyBottom = enemy.y + enemy.height / 2
+
+      const playerLeft = this.player.x - this.player.radius
+      const playerRight = this.player.x + this.player.radius
+      const playerTop = this.player.y - this.player.radius
+      const playerBottom = this.player.y + this.player.radius
+
+      if (enemyLeft < playerRight && enemyRight > playerLeft &&
+          enemyTop < playerBottom && enemyBottom > playerTop) {
+        // Check damage cooldown
+        const currentTime = Date.now()
+        if (currentTime - enemy.lastDamageTime >= enemy.damageCooldown) {
+          // Get actual damage dealt (0 if blocked/dodged, actual amount if dealt)
+          const damageDealt = this.player.takeDamage(1)
+          
+          if (damageDealt > 0) {
+            console.log(`Player took ${damageDealt} damage! Creating floating text`)
+            // Create floating text for player damage
+            this.floatingTexts.push(new FloatingText(this.player.x, this.player.y - 30, damageDealt, false, undefined, true))
+          }
+          
+          enemy.lastDamageTime = currentTime
+        }
+      }
+    })
+    
     // TODO: Enemy projectiles vs Player
   }
 
@@ -480,6 +526,9 @@ export class Game {
             damage *= 2
           }
           const enemyDied = enemy.takeDamage(damage)
+          
+          // Create floating text for enemy damage
+          this.floatingTexts.push(new FloatingText(enemy.x, enemy.y - 20, damage, isCrit))
           
           if (enemyDied) {
             this.dropSoma(enemy.x, enemy.y)
