@@ -1,96 +1,96 @@
 /* UnifiedUI.css */
 #unified-ui-container {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.8);
-  z-index: 1000;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.8);
+    z-index: 1000;
 }
 
 .ui-content {
-  display: flex;
-  width: 100%;
-  height: 100%;
-  box-sizing: border-box;
+    display: flex;
+    width: 100%;
+    height: 100%;
+    box-sizing: border-box;
 }
 
 #dynamic-content {
-  flex: 1;
-  background: #2a2a2a;
-  padding: 15px;
-  color: white;
-  overflow-y: auto;
+    flex: 1;
+    background: #2a2a2a;
+    padding: 15px;
+    color: white;
+    overflow-y: auto;
 }
 
 
 .hidden {
-  display: none;
+    display: none;
 }
 
 /* Button styles */
 .btn-primary {
-  background: #4CAF50;
-  color: white;
-  border: none;
-  padding: 12px 24px;
-  cursor: pointer;
-  font-size: 16px;
+    background: #4CAF50;
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    cursor: pointer;
+    font-size: 16px;
 }
 
 .btn-primary:hover {
-  background: #45a049;
+    background: #45a049;
 }
 
 .btn-secondary {
-  background: #555;
-  color: white;
-  border: none;
-  padding: 12px 24px;
-  cursor: pointer;
-  font-size: 16px;
+    background: #555;
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    cursor: pointer;
+    font-size: 16px;
 }
 
 .btn-secondary:hover {
-  background: #666;
+    background: #666;
 }
 
 .btn-danger {
-  background: #f44336;
-  color: white;
-  border: none;
-  padding: 12px 24px;
-  cursor: pointer;
-  font-size: 16px;
+    background: #f44336;
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    cursor: pointer;
+    font-size: 16px;
 }
 
 .btn-danger:hover {
-  background: #d32f2f;
+    background: #d32f2f;
 }
 
 /* Stat choice buttons */
 .stat-choice-btn {
-  display: block;
-  width: 100%;
-  margin: 10px 0;
-  padding: 15px;
-  background: #333;
-  color: white;
-  border: none;
-  cursor: pointer;
-  font-size: 16px;
+    display: block;
+    width: 100%;
+    margin: 10px 0;
+    padding: 15px;
+    background: #333;
+    color: white;
+    border: none;
+    cursor: pointer;
+    font-size: 16px;
 }
 
 .stat-choice-btn:hover {
-  background: #444;
+    background: #444;
 }
 
 .stat-name {
-  font-weight: bold;
+    font-weight: bold;
 }
 
 .stat-bonus {
-  float: right;
-  color: #4CAF50;
+    float: right;
+    color: #4CAF50;
 }
