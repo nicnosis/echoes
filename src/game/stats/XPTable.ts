@@ -9,13 +9,13 @@ export class XPTable {
   private static isLoaded = false
 
   /**
-   * Load XP table from CSV
+   * Load XP table from data/xptable.csv
    */
   static async loadXPTable(): Promise<void> {
     if (this.isLoaded) return
 
     try {
-      const response = await fetch('/xp-table.csv')
+      const response = await fetch('/data/xptable.csv')
       const csvText = await response.text()
       this.parseCSV(csvText)
       this.isLoaded = true
