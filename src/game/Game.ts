@@ -277,7 +277,10 @@ export class Game {
     this.waveLevelStartedAt = this.player.stats.level
     this.waveTimer = this.getWaveDuration(this.waveIndex)
     
-    // Reset player health to full
+    // Ensure all stats are up to date before setting HP
+    this.player.stats.updateGear(this.player.body)
+    
+    // Reset player health to full (after stats recalculation)
     this.player.stats.setCurrentHP(this.player.stats.getMaxHP())
     
     // Clear game objects
@@ -307,7 +310,10 @@ export class Game {
     const currentLevel = this.player.stats.level
     this.levelUpCredits = currentLevel - this.waveLevelStartedAt
     
-    // Reset player health to full
+    // Ensure all stats are up to date before setting HP
+    this.player.stats.updateGear(this.player.body)
+    
+    // Reset player health to full (after stats recalculation)
     this.player.stats.setCurrentHP(this.player.stats.getMaxHP())
     
     console.log(`📊 Level ups gained: ${this.levelUpCredits}`)

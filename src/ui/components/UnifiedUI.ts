@@ -268,7 +268,7 @@ export class UnifiedUI {
           const statBonus: Record<string, number> = {}
           switch (statType) {
             case 'damage':
-              statBonus.attack = 5
+              statBonus.damage = 5
               break
             case 'health':
               statBonus.maxHP = 10

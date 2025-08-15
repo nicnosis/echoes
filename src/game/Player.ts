@@ -46,6 +46,13 @@ export class Player {
     // Facing direction
     public facingRight: boolean = true
 
+    // Movement animation properties
+    private animationTime: number = 0
+    private animationPeriod: number = 350 // Period in milliseconds for full cycle
+    private animationOffset: number = Math.random() * Math.PI * 2 // Random start phase
+    private isMoving: boolean = false
+    private animationIntensity: number = 0 // 0-1, how much animation to apply
+
     constructor(x: number, y: number) {
         this.x = x
         this.y = y
@@ -146,11 +153,39 @@ export class Player {
         this.x = Math.max(this.width / 2, Math.min(canvasWidth - this.width / 2, this.x))
         this.y = Math.max(this.height / 2, Math.min(canvasHeight - this.height / 2, this.y))
 
+        // Update movement animation
+        this.updateMovementAnimation(deltaTime, dx, dy)
+
         // Update weapons and projectiles
         this.updateWeapons(deltaTime, enemies)
         this.updateProjectiles(deltaTime, canvasWidth, canvasHeight)
 
 
+    }
+
+    // Update movement animation based on player movement
+    private updateMovementAnimation(deltaTime: number, dx: number, dy: number) {
+        const wasMoving = this.isMoving
+        this.isMoving = dx !== 0 || dy !== 0
+
+        if (this.isMoving) {
+            // Player is moving - animate normally and increase intensity
+            this.animationTime += deltaTime
+            this.animationIntensity = Math.min(1, this.animationIntensity + (deltaTime / 200)) // Ramp up over 200ms
+        } else {
+            // Player stopped - gradually reduce animation intensity
+            this.animationIntensity = Math.max(0, this.animationIntensity - (deltaTime / 200)) // Ramp down over 200ms
+            
+            if (this.animationIntensity > 0) {
+                // Continue time but move towards nearest zero point (0 or Math.PI)
+                const currentPhase = (this.animationTime / this.animationPeriod) * 2 * Math.PI + this.animationOffset
+                const currentSine = Math.sin(currentPhase)
+                
+                // Move towards zero sine (either up or down depending on which is closer)
+                const timeStep = deltaTime * (currentSine > 0 ? 1 : -1)
+                this.animationTime += timeStep
+            }
+        }
     }
 
     private updateWeapons(deltaTime: number, enemies: Enemy[]) {
@@ -281,17 +316,24 @@ export class Player {
         return finalDamage
     }
 
-    // Damage calculation with crit chance
+    // Damage calculation with percentage multiplier and crit chance
     private calculateDamage(): number {
-        const baseDamage = this.stats.getStat('damage')
+        // Get base damage from weapon (assumes player has at least one weapon)
+        const weaponBaseDamage = this.weapons.length > 0 ? this.weapons[0].damage : 5
+        
+        // Get damage percentage bonus from stats
+        const damageBonus = this.stats.getStat('damage') // This is a percentage (e.g., 10 = 10%)
         const critChance = this.stats.getStat('critChance')
+        
+        // Calculate final damage: baseDamage * (1 + bonusPercentage/100)
+        const finalDamage = weaponBaseDamage * (1 + damageBonus / 100)
 
         // Check for critical hit
         if (Math.random() * 100 < critChance) {
-            return baseDamage * 2 // Critical hit does double damage
+            return Math.round(finalDamage * 2) // Critical hit does double damage
         }
 
-        return baseDamage
+        return Math.round(finalDamage)
     }
 
     getDamageEvents(): Array<{ amount: number, timestamp: number }> {
@@ -325,6 +367,11 @@ export class Player {
             // Level up!
             this.stats.addLevelUpStat('level', 1)
             this.stats.addLevelUpStat('maxHP', 1) // Auto-gain 1 maxHP per level
+            
+            // Also increase current HP by 1 to match the maxHP increase
+            const currentHP = this.stats.getCurrentHP()
+            this.stats.setCurrentHP(currentHP + 1)
+            
             return true // Level up occurred
         }
 
@@ -355,6 +402,10 @@ export class Player {
     get level() { return this.stats.level }
     get xp() { return this.stats.xp }
     get soma() { return this.stats.getStat('soma') }
+
+    // =============================================================================
+    // RENDERING
+    // =============================================================================
 
     // Render body part sprites and debug nodes in draw order
     private renderBodyPartNodes(renderer: Renderer): void {
@@ -410,21 +461,30 @@ export class Player {
         if (bodyPart.isLoaded()) {
             const sprite = bodyPart.getSprite()
             if (sprite) {
+                // Calculate movement animation scaling
+                const timeInRadians = (this.animationTime / this.animationPeriod) * 2 * Math.PI
+                const sineValue = Math.sin(timeInRadians + this.animationOffset)
+                const scaleVariation = 0.15 // ±15%
+                const widthScale = 1 + (sineValue * scaleVariation * this.animationIntensity)
+                const heightScale = 1 - (sineValue * scaleVariation * this.animationIntensity) // Inverse relationship
+                
                 const spriteSize = 30
-                const spriteX = worldX - spriteSize / 2
-                const spriteY = worldY - spriteSize / 2
+                const scaledWidth = spriteSize * widthScale
+                const scaledHeight = spriteSize * heightScale
+                const spriteX = worldX - scaledWidth / 2
+                const spriteY = worldY - scaledHeight / 2
 
                 // Apply damage flash effect
                 if (this.damageFlashTimer > 0) {
                     renderer.ctx.save()
-                    renderer.drawImage(sprite, spriteX, spriteY, spriteSize, spriteSize, !this.facingRight)
+                    renderer.drawImage(sprite, spriteX, spriteY, scaledWidth, scaledHeight, !this.facingRight)
                     // Use multiply blend mode for red tint
                     renderer.ctx.globalCompositeOperation = 'multiply'
                     renderer.ctx.fillStyle = '#ff6666'
-                    renderer.ctx.fillRect(spriteX, spriteY, spriteSize, spriteSize)
+                    renderer.ctx.fillRect(spriteX, spriteY, scaledWidth, scaledHeight)
                     renderer.ctx.restore()
                 } else {
-                    renderer.drawImage(sprite, spriteX, spriteY, spriteSize, spriteSize, !this.facingRight)
+                    renderer.drawImage(sprite, spriteX, spriteY, scaledWidth, scaledHeight, !this.facingRight)
                 }
             }
         }

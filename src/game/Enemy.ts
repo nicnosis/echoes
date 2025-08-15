@@ -7,8 +7,8 @@ const BASE_MOVE_SPEED = 100
 export class Enemy {
     public x: number
     public y: number
-    public width: number = 30
-    public height: number = 25 // Scaled proportionally from 150x125
+    public width: number = 45 // 150% of 30 for visibility
+    public height: number = 37.5 // 150% of 25 for visibility
     public moveSpeed: number = BASE_MOVE_SPEED * 0.8 // Enemies are slightly slower than player
     public health: number = 3
     public maxHealth: number = 15
@@ -16,8 +16,8 @@ export class Enemy {
     private dying: boolean = false
     private deathTimer: number = 0
     private deathDuration: number = 400 // 500ms death animation
-    private originalWidth: number = 30
-    private originalHeight: number = 25
+    private originalWidth: number = 45
+    private originalHeight: number = 37.5
     private originalColor: string
     private lastDamageTime: number = 0
     private damageCooldown: number = 1000 // 1 second cooldown between damage
@@ -25,6 +25,11 @@ export class Enemy {
     private previousX: number
     private facingRight: boolean = true
     private directionDeadZone: number = 2 // Don't change direction within this distance
+    
+    // Animation properties for subtle breathing effect
+    private animationTime: number = 0
+    private animationPeriod: number = 750 // Period in milliseconds for full cycle
+    private animationOffset: number = Math.random() * Math.PI * 2 // Random start phase
 
     constructor(x: number, y: number) {
         this.x = x
@@ -54,6 +59,11 @@ export class Enemy {
     // Update enemy behavior 
     update(deltaTime: number, player: Player): void {
         const dt = deltaTime / 1000
+
+        // Update animation time for breathing effect
+        if (!this.dying) {
+            this.animationTime += deltaTime // Track time in milliseconds
+        }
 
         if (this.dying) {
             // Update death animation
@@ -106,13 +116,26 @@ export class Enemy {
     }
 
     render(renderer: Renderer) {
-        // Draw crab sprite
-        const spriteX = this.x - this.width / 2
-        const spriteY = this.y - this.height / 2
-        renderer.drawImage(this.sprite, spriteX, spriteY, this.width, this.height, !this.facingRight)
+        // Calculate breathing animation scaling
+        const timeInRadians = (this.animationTime / this.animationPeriod) * 2 * Math.PI
+        const sineValue = Math.sin(timeInRadians + this.animationOffset)
+        const scaleVariation = 0.12 // ±12%
+        const widthScale = 1 + (sineValue * scaleVariation)
+        const heightScale = 1 - (sineValue * scaleVariation) // Inverse relationship
+        
+        // Calculate scaled dimensions
+        const scaledWidth = this.width * widthScale
+        const scaledHeight = this.height * heightScale
+        
+        // Draw crab sprite with scaled dimensions
+        const spriteX = this.x - scaledWidth / 2
+        const spriteY = this.y - scaledHeight / 2
+        renderer.drawImage(this.sprite, spriteX, spriteY, scaledWidth, scaledHeight, !this.facingRight)
 
-        // Draw cyan hitbox outline for debugging
-        renderer.drawRectStroke(spriteX, spriteY, this.width, this.height, 'cyan', 2)
+        // Draw cyan hitbox outline for debugging (using original dimensions)
+        const hitboxX = this.x - this.width / 2
+        const hitboxY = this.y - this.height / 2
+        renderer.drawRectStroke(hitboxX, hitboxY, this.width, this.height, 'cyan', 2)
     }
 
     getBounds() {

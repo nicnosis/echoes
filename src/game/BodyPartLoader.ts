@@ -1,16 +1,16 @@
 import { BodyPart } from './BodyPart'
 
-// CSV parser for bodyparts.csv
+// CSV parser for data/bodyparts.csv
 export class BodyPartLoader {
     private static bodyParts: Map<string, BodyPart> = new Map()
     private static loaded: boolean = false
     
-    // Load and parse bodyparts.csv
+    // Load and parse data/bodyparts.csv
     static async loadBodyParts(): Promise<void> {
         if (this.loaded) return
         
         try {
-            const response = await fetch('/bodyparts.csv')
+            const response = await fetch('/data/bodyparts.csv')
             const csvText = await response.text()
             
             const lines = csvText.trim().split('\n')
@@ -52,7 +52,7 @@ export class BodyPartLoader {
             console.log(`Loaded ${this.bodyParts.size} body parts from CSV`)
             
         } catch (error) {
-            console.error('Failed to load bodyparts.csv:', error)
+            console.error('Failed to load data/bodyparts.csv:', error)
         }
     }
     

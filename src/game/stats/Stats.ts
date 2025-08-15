@@ -19,7 +19,7 @@ export class Stats {
     // =============================================================================
     // THE THREE LAYERS (this is all we need!)
     // =============================================================================
-    base: Record<string, number> = {}      // From stats.csv
+    base: Record<string, number> = {}      // From data/stats.csv
     levelUp: Record<string, number> = {}   // From level up selections
     gear: Record<string, number> = {}      // From body parts and items
     
@@ -113,10 +113,10 @@ export class Stats {
         
         return fields
     }
-    // Load base stats and definitions from stats.csv
+    // Load base stats and definitions from data/stats.csv
     async loadFromCSV(): Promise<void> {
         try {
-            const response = await fetch('/stats.csv')
+            const response = await fetch('/data/stats.csv')
             const text = await response.text()
             const lines = text.split('\n').slice(1) // Skip header
             
@@ -148,7 +148,7 @@ export class Stats {
             
             console.log(`Loaded ${Object.keys(this.base).length} base stats`)
         } catch (error) {
-            console.error('Failed to load stats.csv:', error)
+            console.error('Failed to load data/stats.csv:', error)
             // Fallback to minimal default stats
             this.base = {
                 level: 0,
