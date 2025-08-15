@@ -1,4 +1,4 @@
-id,displayName,type,imgFileName,scale,hp,hpRegen,lifeSteal,damage,red,green,blue,yellow,attackSpeed,critChance,range,armor,dodge,moveSpeed,interest,luck
-froghead,Frog Head,head,froghead.png,0.25,5,,,,,,2,,,,,,8,5,,
+id,displayName,type,imgFileName,scale,maxHP,hpRegen,lifeSteal,damage,red,green,blue,yellow,attackSpeed,critChance,range,armor,dodge,moveSpeed,interest,luck
+froghead,Frog Head,head,froghead.png,0.2,5,,,,,,2,,,,,,8,5,,
 torso,Oblong Torso,torso,torso.png,1,10,,,,,,,,,10,,1,,,,
 turtletorso,Turtle Shell,torso,turtletorso.png,0.25,10,,,,,,2,,,5,,4,,-2,,5

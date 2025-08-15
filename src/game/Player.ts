@@ -87,19 +87,15 @@ export class Player {
         const frogHead = BodyPartLoader.getBodyPart('froghead')
         const torso = BodyPartLoader.getBodyPart('turtletorso')
 
+        // Initialize body parts
         this.body = []
         if (torso) this.body.push(torso)
         if (frogHead) this.body.push(frogHead)
 
-        console.log('Initialized body parts from CSV:', this.body.map(bp => `${bp.type} (${Object.keys(bp.stats).length} stats)`).join(', '))
-
-        // Log the actual stats for debugging
-        this.body.forEach(part => {
-            console.log(`${part.type} stats:`, part.stats)
-        })
-
-        // Update gear stats from body parts
-        this.stats.updateGear(this.body)
+        // Verify all parts loaded, recalculate stats, heal to max
+        console.log('Loaded body parts:', this.body.map(bp => bp.type).join(', '))
+        this.stats.recalculateStats(this.body)
+        this.heal()
     }
 
     // =============================================================================
@@ -387,6 +383,21 @@ export class Player {
     // Get display stats for UI
     getDisplayStats() {
         return this.stats.getDisplayStats()
+    }
+
+    // Heal player by amount or to full if no argument
+    heal(amount?: number): void {
+        const currentHP = this.stats.getCurrentHP()
+        const maxHP = this.stats.getMaxHP()
+        
+        if (amount === undefined) {
+            // No argument = heal to full
+            this.stats.setCurrentHP(maxHP)
+        } else {
+            // Heal specific amount, capped at maxHP
+            const newHP = Math.min(currentHP + amount, maxHP)
+            this.stats.setCurrentHP(newHP)
+        }
     }
 
     // Convenient getters for commonly used stats

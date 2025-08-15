@@ -70,6 +70,15 @@ export class Stats {
     // GEAR MANAGEMENT (BODY PARTS + ITEMS)
     // =============================================================================
     // Recalculate gear stats from body parts
+    // Recalculate all stats (base + levelUp + gear)
+    recalculateStats(bodyParts: any[]) {
+        // Update gear stats from body parts
+        this.updateGear(bodyParts)
+        
+        // Stats automatically recalculated via the total getter
+        // This ensures maxHP, damage, etc. are all current
+    }
+    
     updateGear(bodyParts: any[]) {
         this.gear = {} // Clear existing gear stats
         
