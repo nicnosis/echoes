@@ -1,3 +1,2 @@
-export { StatsManager } from './StatsManager'
-export { StatDefinition } from './StatDefinition'
+export { Stats } from './Stats'
 export { XPTable } from './XPTable' 

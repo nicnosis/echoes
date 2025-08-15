@@ -3,7 +3,7 @@ import { Renderer } from '../render/Renderer'
 import { Projectile } from './Projectile'
 import { Weapon } from './Weapon'
 import { Enemy } from './Enemy'
-import { StatsManager } from './stats/StatsManager'
+import { Stats } from './stats/Stats'
 import { XPTable } from './stats/XPTable'
 import { BodyPart, BODY_POSITIONS } from './BodyPart'
 import { BodyPartLoader } from './BodyPartLoader'
@@ -14,8 +14,8 @@ export class Player {
     public width: number = 30  // was radius * 2
     public height: number = 30 // was radius * 2
 
-    // Unified stats system - ALL stats go through this
-    public stats: StatsManager
+    // Simple stats system - just add numbers!
+    public stats: Stats
 
     // Damage system
     public isInvulnerable: boolean = false
@@ -50,8 +50,9 @@ export class Player {
         this.x = x
         this.y = y
 
-        // Initialize unified stats system
-        this.stats = new StatsManager()
+        // Initialize simple stats system
+        this.stats = new Stats()
+        this.initStats()
 
         // Create dual wands
         this.weapons.push(new Weapon('wand', 500, 100, 5))
@@ -63,6 +64,12 @@ export class Player {
     // =============================================================================
     // INITIALIZATION
     // =============================================================================
+
+    // Initialize stats system
+    private async initStats(): Promise<void> {
+        await this.stats.loadFromCSV()
+        await this.initializeBodyParts()
+    }
 
     // Initialize default body parts from CSV
     private async initializeBodyParts(): Promise<void> {
@@ -85,7 +92,7 @@ export class Player {
         })
 
         // Update gear stats from body parts
-        this.stats.updateGearFromBodyParts(this.body)
+        this.stats.updateGear(this.body)
     }
 
     // =============================================================================
@@ -107,7 +114,7 @@ export class Player {
 
         // Movement
         const naturalSpeed = 150
-        const moveSpeedBonus = this.stats.total.moveSpeed || 0
+        const moveSpeedBonus = this.stats.getStat('moveSpeed')
         const effectiveMoveSpeed = naturalSpeed * (1 + (moveSpeedBonus / 100))
 
         // Calculate movement direction
@@ -243,12 +250,12 @@ export class Player {
         }
 
         // Apply armor reduction
-        const armor = this.stats.total.armor || 0
+        const armor = this.stats.getStat('armor')
         const damageReduction = armor / 100 // Convert percentage to decimal
         const finalDamage = Math.max(1, amount * (1 - damageReduction))
 
         // Check for dodge
-        const dodgeChance = this.stats.total.dodge || 0
+        const dodgeChance = this.stats.getStat('dodge')
         if (Math.random() * 100 < dodgeChance) {
             return 0 // Dodged!
         }
@@ -276,8 +283,8 @@ export class Player {
 
     // Damage calculation with crit chance
     private calculateDamage(): number {
-        const baseDamage = this.stats.total.damage || 0
-        const critChance = this.stats.total.critChance || 0
+        const baseDamage = this.stats.getStat('damage')
+        const critChance = this.stats.getStat('critChance')
 
         // Check for critical hit
         if (Math.random() * 100 < critChance) {
@@ -303,33 +310,31 @@ export class Player {
     // STATS, XP & LEVELING
     // =============================================================================
 
-    gainXP(amount: number) {
-        const leveledUp = this.stats.gainXP(amount)
-        if (leveledUp) {
-            // Level up occurred - this will be handled by Game.ts
-            return true
+    gainXP(amount: number): boolean {
+        const currentXP = this.stats.xp
+        const currentLevel = this.stats.level
+        const newXP = currentXP + amount
+
+        // Update XP
+        this.stats.xp = newXP
+
+        // Check for level up using XP table
+        const xpRequired = XPTable.getTotalXPForLevel(currentLevel + 1)
+
+        if (newXP >= xpRequired) {
+            // Level up!
+            this.stats.addLevelUpStat('level', 1)
+            this.stats.addLevelUpStat('maxHP', 1) // Auto-gain 1 maxHP per level
+            return true // Level up occurred
         }
+
         return false
     }
 
     // Level up bonus selection
     selectLevelUpBonus(stat: 'maxHP' | 'damage' | 'armor' | 'moveSpeed') {
         const bonusAmount = 5 // Base bonus amount
-
-        switch (stat) {
-            case 'maxHP':
-                this.stats.addLevelUpStats({ maxHP: bonusAmount })
-                break
-            case 'damage':
-                this.stats.addLevelUpStats({ damage: bonusAmount })
-                break
-            case 'armor':
-                this.stats.addLevelUpStats({ armor: bonusAmount })
-                break
-            case 'moveSpeed':
-                this.stats.addLevelUpStats({ moveSpeed: bonusAmount })
-                break
-        }
+        this.stats.addLevelUpStat(stat, bonusAmount)
     }
 
     // Get display stats for UI
@@ -344,12 +349,12 @@ export class Player {
         // naturalSpeed is the base movement speed without any stat bonuses
         // This is different from stats.base.moveSpeed which is the starting value of the moveSpeed stat
         const naturalSpeed = 150
-        const moveSpeedBonus = this.stats.total.moveSpeed || 0
+        const moveSpeedBonus = this.stats.getStat('moveSpeed')
         return naturalSpeed * (1 + (moveSpeedBonus / 100))
     }
     get level() { return this.stats.level }
     get xp() { return this.stats.xp }
-    get soma() { return this.stats.total.soma || 0 }
+    get soma() { return this.stats.getStat('soma') }
 
     // Render body part sprites and debug nodes in draw order
     private renderBodyPartNodes(renderer: Renderer): void {
@@ -482,7 +487,7 @@ export class Player {
         this.body.push(newPart)
 
         // Update gear stats from body parts
-        this.stats.updateGearFromBodyParts(this.body)
+        this.stats.updateGear(this.body)
         
         console.log(`Replaced ${oldPart?.type || 'empty slot'} with ${newPart.type}`)
     }
@@ -493,12 +498,18 @@ export class Player {
     }
 
     equipItem(itemStats: Record<string, number>) {
-        this.stats.equipItem(itemStats)
+        // Add item stats to gear layer
+        Object.entries(itemStats).forEach(([stat, value]) => {
+            this.stats.gear[stat] = (this.stats.gear[stat] || 0) + value
+        })
         this.equippedItems.push(itemStats) // Track equipped items
     }
 
     unequipItem(itemStats: Record<string, number>) {
-        this.stats.unequipItem(itemStats)
+        // Remove item stats from gear layer
+        Object.entries(itemStats).forEach(([stat, value]) => {
+            this.stats.gear[stat] = (this.stats.gear[stat] || 0) - value
+        })
         // Remove from equipped items list
         const index = this.equippedItems.findIndex(item =>
             JSON.stringify(item) === JSON.stringify(itemStats)
