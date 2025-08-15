@@ -22,16 +22,34 @@ export class BodyPartLoader {
             for (let i = 1; i < lines.length; i++) {
                 const values = lines[i].split(',')
                 
-                const id = values[0]
-                const displayName = values[1] 
-                const type = values[2]
-                const imgFileName = values[3]
+                // Create a map for semantic column access
+                const row: Record<string, string> = {}
+                for (let j = 0; j < headers.length; j++) {
+                    row[headers[j]] = values[j] || ''
+                }
                 
-                // Parse stats from column E onward
+                const id = row['id']
+                const displayName = row['displayName']
+                const type = row['type']
+                const imgFileName = row['imgFileName']
+                
+                // Extract scale value using semantic accessor
+                let scale = 1 // Default scale
+                if (row['scale']) {
+                    const scaleValue = parseFloat(row['scale'])
+                    if (!isNaN(scaleValue)) {
+                        scale = scaleValue
+                    }
+                }
+                
+                // Parse stats from column E onward (excluding scale)
                 const stats: Record<string, number> = {}
                 for (let j = statsStartIndex; j < headers.length; j++) {
                     const statName = headers[j]
                     const statValue = values[j]
+                    
+                    // Skip the scale column (it's handled separately)
+                    if (statName === 'scale') continue
                     
                     // Only add non-empty values
                     if (statValue && statValue.trim() !== '') {
@@ -42,7 +60,7 @@ export class BodyPartLoader {
                     }
                 }
                 
-                const bodyPart = new BodyPart(type, imgFileName, stats)
+                const bodyPart = new BodyPart(type, imgFileName, stats, scale)
                 this.bodyParts.set(id, bodyPart)
                 
                 console.log(`Loaded ${type} (${id}):`, stats)

@@ -3,15 +3,17 @@ export class BodyPart {
     public type: string
     public imgFileName: string
     public stats: Record<string, number>
+    public scale: number
     
     // Sprite rendering
     private sprite: HTMLImageElement | null = null
     private spriteLoaded: boolean = false
     
-    constructor(type: string, imgFileName: string, stats: Record<string, number>) {
+    constructor(type: string, imgFileName: string, stats: Record<string, number>, scale: number = 1) {
         this.type = type
         this.imgFileName = imgFileName
         this.stats = stats
+        this.scale = scale
         
         // Load sprite
         this.loadSprite()

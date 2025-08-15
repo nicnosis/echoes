@@ -85,7 +85,7 @@ export class Player {
 
         // Get specific body parts by ID
         const frogHead = BodyPartLoader.getBodyPart('froghead')
-        const torso = BodyPartLoader.getBodyPart('torso')
+        const torso = BodyPartLoader.getBodyPart('turtletorso')
 
         this.body = []
         if (torso) this.body.push(torso)
@@ -468,9 +468,11 @@ export class Player {
                 const widthScale = 1 + (sineValue * scaleVariation * this.animationIntensity)
                 const heightScale = 1 - (sineValue * scaleVariation * this.animationIntensity) // Inverse relationship
                 
-                const spriteSize = 30
-                const scaledWidth = spriteSize * widthScale
-                const scaledHeight = spriteSize * heightScale
+                // Use native image size multiplied by body part scale
+                const baseWidth = sprite.naturalWidth * bodyPart.scale
+                const baseHeight = sprite.naturalHeight * bodyPart.scale
+                const scaledWidth = baseWidth * widthScale
+                const scaledHeight = baseHeight * heightScale
                 const spriteX = worldX - scaledWidth / 2
                 const spriteY = worldY - scaledHeight / 2
 
