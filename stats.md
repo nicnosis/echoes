@@ -1,147 +1,186 @@
-# StatsManager.ts
+# Stats System Architecture
 
-The role of our stats manager and how we approach stats. (I will also have another file that is the ‘stats dictionary’ which lays out the order, etc.)
+## 🎯 Core Principle: SIMPLE ADDITION
+```
+base + levelUp + gear = total
+```
+That's it! No complex validation, no over-engineering, just simple number addition.
 
-## ROLES
+## 📁 Files & Components
 
-### → LOAD STATS from CSV or other source
+### **Stats.ts** - Simple stats calculation class (~200 lines)
+- Replaces the old 400+ line StatsManager
+- Three simple objects: `base`, `levelUp`, `gear`
+- Computed `total` getter that adds the three layers
+- CSV loading and bounds checking
 
-- I think it might make sense to manage the stats in a table especially given the number of fields. It will be easier to drag them around, reorder etc.
+### **stats.csv** - Stat definitions with emojis
+- Defines all game stats with display info
+- Includes emoji column for visual stats panel
+- Proper CSV formatting with explicit empty values
 
-### → STORE STATS
-- There are three categories of stats:
-    - Primary stats such as moveSpeed and armor,
-    - Secondary stats (not implemented yet; leave blank)
-    - Core stats: 
-        - XP
-        - Level
-        - hp (current HP, not max)
-        - Soma (amount of currency available)
-        - These core stats do not have multiple layers (e.g. there is no bonus to them from gear or level ups etc.)   
-        - These should be stored directly in player.stats
+### **StatsPanel.ts** - Single UI component
+- Singleton pattern with ONE container
+- No more cloning or synchronization
+- Direct integration with UnifiedUI
 
-- Eventually we will have the StatsPanel with two buttons (primary and secondary) so we can click through to see which set we want to look at.
-- These are the composite parts:
-    - base: the amount that the player starts with
-    - fromLevelUp: stat increases from Level Up selections
-    - fromGear: stat increases from items/equipment
-    - total: calculated sum of stats from base amount, from level up, and from gear
+### **UnifiedUI.ts** - Single container approach
+- One stats panel on the right side
+- Dynamic content on the left side
+- Eliminates multiple panel synchronization
 
-### → SET DEFAULT STATS at the start of the game
+## 🏗️ The Three Layers
 
-### → XP
-- Eventually, I will have a table of experience points necessary to progress.
+### **1. base** - Starting values from CSV
+```typescript
+base: Record<string, number> = {}  // From stats.csv baseValue column
+```
+- Loaded once from `stats.csv`
+- Never changes during gameplay
+- Examples: level (0), maxHP (10), damage (0)
 
-### → LEVEL UP
+### **2. levelUp** - Bonuses from level up selections
+```typescript
+levelUp: Record<string, number> = {}  // From player choices
+```
+- Incremented when player selects level up bonuses
+- Automatic bonuses: +1 level and +1 maxHP per level up
+- Manual bonuses: +5 to chosen stat (damage, armor, moveSpeed, etc.)
 
-- Called in Game.ts by checkSomaPickup which calls statsManager.gainXP
+### **3. gear** - Stats from body parts and items
+```typescript
+gear: Record<string, number> = {}  // From equipment
+```
+- Recalculated from body parts when they change
+- Future: Will include weapon and armor stats
+- Examples: Frog Head (+8 dodge, +5 moveSpeed), Torso (+10 critChance)
 
-### → UPDATE STATS
+## 🔧 Key API Methods
 
-- (called by Game.ts)
-- When to update stats:
-  - On Wave End
-  - On Wave Start
-  - On Pause
-  - On Level Up selections
-  - On Equipment changes
-  - On Shop End
+### **Core Stats Access**
+```typescript
+player.getStat('maxHP')          // Get any stat (uses total)
+player.stats.level               // Convenience getter
+player.stats.getCurrentHP()      // HP management helper
+```
 
-### → DISPLAY STATS
+### **Stat Modification**
+```typescript
+player.stats.updateGear(this.body)           // Recalculate gear from body parts
+player.stats.addLevelUpStat('damage', 5)     // Add level up bonus
+player.stats.setBaseStat('hp', newValue)     // Set core stats (HP, XP)
+```
 
-- Stats are displayed in a StatsPanel. There will be three StatPanels displayed in the UI. One of them is the “master” stats panel that has its data updated, and the other two are cloned from it on every update
-  - StatsPanel 1 (master): in ShopScreen
-  - StatsPanel 2: PauseScreen
-  - StatsPanel 3: LevelUpScreen
-- Every time stats are updated:
-  - Master StatsPanel DOM is updated (the one in ShopScreen)
-  - PauseScreen and LevelUpScreen’s respective StatPanels will be replaced by the content of the Master StatsPanel
+### **UI Integration**
+```typescript
+player.stats.getDisplayStats()               // Get formatted stats for UI
+player.stats.updateStatsPanel(container)     // Update HTML directly
+```
 
-# stats.csv
+## 🏃 Automatic Level Progression
 
-## CSV Field Descriptions
+Every level up automatically grants:
+- **+1 Level** (tracked in levelUp stats)
+- **+1 Max HP** (tracked in levelUp stats)
+- **+1 Manual choice** (player selects: damage, armor, moveSpeed, maxHP)
 
-The `stats.csv` file defines the structure and properties of all player statistics in the game. Each row represents a single stat with the following columns:
+Example at level 2:
+- Level: 0 (base) + 2 (levelUp) = 2
+- Max HP: 10 (base) + 2 (auto) + maybe 5 (manual choice) = 17
 
-### **category** (string)
-- **Purpose**: Groups stats into logical categories
-- **Values**: `primary` (combat/character stats), `secondary` (supportive stats)
-- **Usage**: Determines how stats are organized and displayed in the UI
+## 🎮 Integration Points
 
-### **order** (integer)
-- **Purpose**: Defines the display order of stats in the UI
-- **Values**: 0-based index, lower numbers appear first
-- **Usage**: Ensures consistent stat ordering across all screens
+### **Player.ts**
+```typescript
+// XP and leveling (handled in Player, not Stats)
+gainXP(amount: number): boolean {
+    // XP logic here, calls stats.addLevelUpStat() on level up
+}
 
-### **key** (string)
-- **Purpose**: Internal identifier used in code to reference the stat
-- **Values**: camelCase identifiers (e.g., `maxHP`, `attackSpeed`)
-- **Usage**: Used in game logic, data storage, and API calls
+// Body parts integration
+private async initializeBodyParts(): Promise<void> {
+    // Load body parts, then:
+    this.stats.updateGear(this.body)
+}
+```
 
-### **displayName** (string)
-- **Purpose**: Human-readable name shown in the UI
-- **Values**: User-friendly labels (e.g., "Max HP", "Attack Speed")
-- **Usage**: Displayed in stats panels and tooltips
+### **Game.ts**
+```typescript
+// Simple stat access throughout the game
+const armor = player.getStat('armor')
+const critChance = player.getStat('critChance')
+```
 
-### **hideInStatsPanel** (boolean)
-- **Purpose**: Controls whether the stat is visible in the stats panel
-- **Values**: `TRUE` (hidden), `FALSE` or empty (visible)
-- **Usage**: Hides internal stats like current HP or XP from the main display
+### **UnifiedUI.ts**
+```typescript
+// Single stats panel update
+this.statsPanel.update(player)  // Updates the one container
+```
 
-### **description** (string)
-- **Purpose**: Explains what the stat does
-- **Values**: Brief descriptions of stat effects
-- **Usage**: Tooltips and help text
+# 📊 stats.csv Schema
 
-### **isPercent** (boolean)
-- **Purpose**: Indicates if the stat value should be displayed or calculated as a percentage
-- **Values**: `TRUE` (show as %), `FALSE` or empty (show as raw number)
-- **Usage**: Affects UI formatting (e.g., "15%" vs "15"). Also affects calculation. For example, critChance will be stored as 5 but the chance of a critical hit will be calculated as critChance/100.
+The `stats.csv` file defines all player statistics with their display properties and behavior.
 
-### **baseValue** (number)
-- **Purpose**: Starting value for the stat when the game begins
-- **Values**: Numeric starting values
-- **Usage**: Initial stat values for new players
+## CSV Structure
+```
+category,order,key,displayName,hideInStatsPanel,description,isPercent,baseValue,minValue,maxValue,emoji
+```
 
-### **minValue** (number)
-- **Purpose**: Minimum allowed value for the stat
-- **Values**: Numeric minimums (can be empty for no minimum)
-- **Usage**: Prevents stats from going below reasonable bounds
+## Column Definitions
 
-### **maxValue** (number)
-- **Purpose**: Maximum allowed value for the stat
-- **Values**: Numeric maximums (can be empty for no maximum)
-- **Usage**: Prevents stats from exceeding reasonable bounds
+| Column | Type | Purpose | Example |
+|--------|------|---------|---------|
+| **category** | `primary`/`core` | Groups stats logically | `primary` |
+| **order** | integer | Display order (0-based) | `0` |
+| **key** | string | Code identifier | `maxHP` |
+| **displayName** | string | UI label | `Max HP` |
+| **hideInStatsPanel** | boolean | Visibility control | `FALSE` |
+| **description** | string | Tooltip text | `Maximum HP` |
+| **isPercent** | boolean | Format as percentage | `TRUE` |
+| **baseValue** | number | Starting value | `10` |
+| **minValue** | number | Lower bound | `1` |
+| **maxValue** | number | Upper bound | `""` |
+| **emoji** | string | Visual icon | `❤️` |
 
-## Current Stats Structure
+## Key Categories
 
-The CSV currently defines **17 primary stats**:
+### **primary** - Visible combat/character stats
+- Displayed in stats panel
+- Can have levelUp and gear bonuses
+- Examples: damage, armor, moveSpeed
 
-1. **Level** - Current player level (starts at 1)
-2. **XP** - Total accumulated experience (hidden from display)
-3. **Max HP** - Maximum health points (starts at 10)
-4. **HP** - Current health points (hidden from display)
-5. **HP Regeneration** - Health recovery rate (starts at 5)
-6. **Lifesteal** - Chance to heal when hitting enemies (starts at 0)
-7. **Damage** - Percent damage increase (starts at 0, displayed as %)
-8. **Red** - Red element value (starts at 0)
-9. **Green** - Green element value (starts at 0)
-10. **Blue** - Blue element value (starts at 0)
-11. **Yellow** - Yellow element value (starts at 0)
-12. **Attack Speed** - Percent attack speed increase (starts at 0, displayed as %)
-13. **Crit** - Critical hit chance (starts at 0)
-14. **Range** - Attack radius (starts at 0)
-15. **Armor** - Damage reduction (starts at 0)
-16. **Dodge** - Percent dodge chance (starts at 0, displayed as %)
-17. **Speed** - Percent movement speed increase (starts at 0, displayed as %)
-18. **Interest** - Percent interest. At the end of each wave, player's soma is multiplied by (1 + Interest).
-19. **Luck** - Improves quality of item and level up bonuses.
+### **core** - Internal game mechanics
+- Hidden from stats panel (`hideInStatsPanel: TRUE`)
+- Only use base values (no levelUp/gear bonuses)
+- Examples: level, xp, hp, soma
 
-## Usage in Code
+## Current Stats (20 total)
 
-The StatsManager loads this CSV to:
-- Initialize player stats with base values
-- Validate stat ranges during updates
-- Format display values (percentages vs raw numbers)
-- Control UI visibility and ordering
-- Provide descriptions for tooltips and help text
+### **Core Stats** (hidden from panel)
+1. ⭐ **Level** - Current player level
+2. ✨ **XP** - Experience points
+3. 🔮 **Soma** - Currency
+4. 💗 **HP** - Current health
+
+### **Primary Stats** (visible in panel)
+5. ❤️ **Max HP** - Maximum health points
+6. 💚 **HP Regen** - Health recovery rate
+7. 🩸 **Lifesteal** - Heal on enemy hit
+8. ⚔️ **Damage** - Percent damage increase
+9. 🔴 **Red** - Red element value
+10. 🟢 **Green** - Green element value
+11. 🔵 **Blue** - Blue element value
+12. 🟡 **Yellow** - Yellow element value
+13. ⚡ **Attack Speed** - Attack rate increase
+14. 💥 **Crit** - Critical hit chance
+15. 🔭 **Range** - Attack radius
+16. 🛡️ **Armor** - Damage reduction
+17. 💨 **Dodge** - Dodge chance
+18. 🏃 **Speed** - Movement speed
+19. 💰 **Interest** - Soma interest rate
+20. 🍀 **Luck** - Bonus quality
+
+## Percentage Stats
+Stats with `isPercent: TRUE` are formatted with % and calculated as percentages:
+- **Damage**: `15` → displays as `15%` → multiplier is `1.15`
+- **Dodge**: `10` → displays as `10%` → chance is `10%`

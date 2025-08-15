@@ -118,11 +118,11 @@ export class UnifiedUI {
         this.container.classList.add('hidden')
       }
       
-      // Initialize stats panel
+      // Initialize stats panel with single container
       const statsContainer = document.getElementById('stats-panel-container')
       if (statsContainer && this.statsPanel) {
         await this.statsPanel.initialize()
-        this.statsPanel.registerContainer(statsContainer, true)
+        this.statsPanel.setContainer(statsContainer)
       }
       
       console.log('✅ UnifiedUI container initialized and positioned over canvas')

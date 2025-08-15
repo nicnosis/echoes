@@ -5,8 +5,7 @@ import { loadHTMLTemplate } from '../utils/templateLoader'
 export class StatsPanel {
     private static instance: StatsPanel
     private templateHTML: string = ''
-    private containers: HTMLElement[] = []
-    private masterContainer: HTMLElement | null = null
+    private container: HTMLElement | null = null
 
     private constructor() { }
 
@@ -27,51 +26,27 @@ export class StatsPanel {
         }
     }
 
-    // Register a container that should display stats
-    registerContainer(container: HTMLElement, isMaster: boolean = false): void {
-
-        if (!this.containers.includes(container)) {
-            this.containers.push(container)
-            container.innerHTML = this.templateHTML
-            
-            if (isMaster) {
-                this.masterContainer = container
-            }
-        }
+    // Set the single container for this stats panel (UnifiedUI approach)
+    setContainer(container: HTMLElement): void {
+        this.container = container
+        container.innerHTML = this.templateHTML
+        console.log('✅ StatsPanel initialized with single container')
     }
 
-    // Remove a container from updates
-    unregisterContainer(container: HTMLElement): void {
-        const index = this.containers.indexOf(container)
-        if (index > -1) {
-            this.containers.splice(index, 1)
-        }
-        if (this.masterContainer === container) {
-            this.masterContainer = null
-        }
-    }
-
-    // Update all registered containers with current player stats
+    // Update the single container with current player stats
     update(player: Player): void {
-        if (!this.masterContainer) {
-    
+        if (!this.container) {
+            console.warn('StatsPanel: No container set for updates')
             return
         }
 
-        // Update the master container with new stats
-        player.stats.updateMasterStatsPanel(this.masterContainer)
-
-        // Clone the master container content to all other containers
-        this.containers.forEach(container => {
-            if (container !== this.masterContainer) {
-                player.stats.cloneStatsToContainer(container, this.masterContainer!)
-            }
-        })
+        // Update the single container directly
+        player.stats.updateMasterStatsPanel(this.container)
     }
 
-    // Get the master container (for other components to use)
-    getMasterContainer(): HTMLElement | null {
-        return this.masterContainer
+    // Get the container (for other components to use)
+    getContainer(): HTMLElement | null {
+        return this.container
     }
 
     private getFallbackHTML(): string {

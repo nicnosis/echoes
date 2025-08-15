@@ -1,21 +1,21 @@
-category,order,key,displayName,hideInStatsPanel,description,isPercent,baseValue,minValue,maxValue
-primary,0,level,Level,,Current player level,,0,0,
-core,1,xp,XP,TRUE,Total accumulated experience points,,0,0,
-core,2,soma,Soma,TRUE,Currency for shop purchases,,0,0,
-primary,3,maxHP,Max HP,,Maximum HP,,10,1,
-core,4,hp,HP,TRUE,Current HP,,10,,
-primary,5,hpRegen,HP Regen,,HP regeneration,,0,,
-primary,6,lifeSteal,Lifesteal,,Determines lifesteal chance on enemies,,0,,
-primary,7,damage,Damage,,Percent damage increase,TRUE,0,,
-primary,8,red,Red,,Red element,,0,,
-primary,9,green,Green,,Green element,,0,,
-primary,10,blue,Blue,,Blue element,,0,,
-primary,11,yellow,Yellow,,Yellow element,,0,,
-primary,12,attackSpeed,Attack Speed,,Percent increase in attack speed,TRUE,0,,
-primary,13,critChance,Crit,,Chance for critical hits,,0,,
-primary,14,range,Range,,Determines attack radius,,0,,
-primary,15,armor,Armor,,Reduces damage,,0,,
-primary,16,dodge,Dodge,,Percent chance to dodge,TRUE,0,,
-primary,17,moveSpeed,Speed,,Percent movement increase,TRUE,0,,
-primary,18,interest,Interest,,"At the end of each wave, the percent of interest",TRUE,0,,
-primary,19,luck,Luck,,Improves quality of items and level up bonuses,,0,,
+category,order,key,displayName,hideInStatsPanel,description,isPercent,baseValue,minValue,maxValue,emoji
+primary,0,level,Level,FALSE,Current player level,FALSE,0,0,"",⭐
+core,1,xp,XP,TRUE,Total accumulated experience points,FALSE,0,0,"",✨
+core,2,soma,Soma,TRUE,Currency for shop purchases,FALSE,0,0,"",🔮
+primary,3,maxHP,Max HP,FALSE,Maximum HP,FALSE,10,1,"",❤️
+core,4,hp,HP,TRUE,Current HP,FALSE,10,"","",💗
+primary,5,hpRegen,HP Regen,FALSE,HP regeneration,FALSE,0,"","",💚
+primary,6,lifeSteal,Lifesteal,FALSE,Determines lifesteal chance on enemies,FALSE,0,"","",🩸
+primary,7,damage,Damage,FALSE,Percent damage increase,TRUE,0,"","",⚔️
+primary,8,red,Red,FALSE,Red element,FALSE,0,"","",🔴
+primary,9,green,Green,FALSE,Green element,FALSE,0,"","",🟢
+primary,10,blue,Blue,FALSE,Blue element,FALSE,0,"","",🔵
+primary,11,yellow,Yellow,FALSE,Yellow element,FALSE,0,"","",🟡
+primary,12,attackSpeed,Attack Speed,FALSE,Percent increase in attack speed,TRUE,0,"","",⚡
+primary,13,critChance,Crit,FALSE,Chance for critical hits,FALSE,0,"","",💥
+primary,14,range,Range,FALSE,Determines attack radius,FALSE,0,"","",🔭
+primary,15,armor,Armor,FALSE,Reduces damage,FALSE,0,"","",🛡️
+primary,16,dodge,Dodge,FALSE,Percent chance to dodge,TRUE,0,"","",💨
+primary,17,moveSpeed,Speed,FALSE,Percent movement increase,TRUE,0,"","",🏃
+primary,18,interest,Interest,FALSE,"At the end of each wave, the percent of interest",TRUE,0,"","",💰
+primary,19,luck,Luck,FALSE,Improves quality of items and level up bonuses,FALSE,0,"","",🍀

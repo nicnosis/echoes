@@ -12,6 +12,7 @@ interface StatDefinition {
     maxValue?: number
     isPercent: boolean
     hideInStatsPanel: boolean
+    emoji: string
 }
 
 export class Stats {
@@ -98,7 +99,7 @@ export class Stats {
             for (const line of lines) {
                 if (line.trim()) {
                     const [category, order, key, displayName, hideInStatsPanel,
-                           description, isPercent, baseValue, minValue, maxValue] = 
+                           description, isPercent, baseValue, minValue, maxValue, emoji] = 
                            line.split(',').map(cell => cell.trim())
                     
                     // Create stat definition
@@ -109,7 +110,8 @@ export class Stats {
                         minValue: minValue ? parseFloat(minValue) : undefined,
                         maxValue: maxValue ? parseFloat(maxValue) : undefined,
                         isPercent: isPercent === 'TRUE',
-                        hideInStatsPanel: hideInStatsPanel === 'TRUE'
+                        hideInStatsPanel: hideInStatsPanel === 'TRUE',
+                        emoji: emoji || ''
                     }
                     
                     // Store definition and initialize base stat
@@ -162,6 +164,7 @@ export class Stats {
         value: number
         formattedValue: string
         isPercent: boolean
+        emoji: string
     }> {
         const stats: Array<any> = []
         const totals = this.total
@@ -177,7 +180,8 @@ export class Stats {
                     displayName: def.displayName,
                     value,
                     formattedValue,
-                    isPercent: def.isPercent
+                    isPercent: def.isPercent,
+                    emoji: def.emoji
                 })
             }
         })
@@ -185,28 +189,28 @@ export class Stats {
         return stats
     }
 
-    // Update master stats panel HTML (for StatsPanel.ts)
-    updateMasterStatsPanel(masterContainer: HTMLElement): void {
+    // Update stats panel HTML (for single container approach)
+    updateStatsPanel(container: HTMLElement): void {
         const displayStats = this.getDisplayStats()
         
         // Clear existing content
-        masterContainer.innerHTML = ''
+        container.innerHTML = ''
         
         // Generate HTML dynamically based on stats
         displayStats.forEach(stat => {
             const statElement = document.createElement('div')
             statElement.className = `stat-item ${stat.key}`
             statElement.innerHTML = `
-                <span class="stat-name">${stat.displayName}</span>
+                <span class="stat-name">${stat.emoji} ${stat.displayName}</span>
                 <span class="stat-value">${stat.formattedValue}</span>
             `
-            masterContainer.appendChild(statElement)
+            container.appendChild(statElement)
         })
     }
 
-    // Clone stats HTML from master to target container (for StatsPanel.ts)
-    cloneStatsToContainer(targetContainer: HTMLElement, masterContainer: HTMLElement): void {
-        targetContainer.innerHTML = masterContainer.innerHTML
+    // Legacy method for backward compatibility (calls the new method)
+    updateMasterStatsPanel(container: HTMLElement): void {
+        this.updateStatsPanel(container)
     }
     
     // =============================================================================
