@@ -88,6 +88,31 @@ export class Stats {
     // =============================================================================
     // CSV LOADING (INITIALIZATION)
     // =============================================================================
+    
+    // Parse a CSV line handling quoted fields with commas
+    private parseCSVLine(line: string): string[] {
+        const fields: string[] = []
+        let currentField = ''
+        let inQuotes = false
+        
+        for (let i = 0; i < line.length; i++) {
+            const char = line[i]
+            
+            if (char === '"') {
+                inQuotes = !inQuotes
+            } else if (char === ',' && !inQuotes) {
+                fields.push(currentField.trim())
+                currentField = ''
+            } else {
+                currentField += char
+            }
+        }
+        
+        // Add the last field
+        fields.push(currentField.trim())
+        
+        return fields
+    }
     // Load base stats and definitions from stats.csv
     async loadFromCSV(): Promise<void> {
         try {
@@ -98,20 +123,21 @@ export class Stats {
             // Parse each line of the CSV
             for (const line of lines) {
                 if (line.trim()) {
+                    // Parse CSV properly handling quoted values with commas
+                    const fields = this.parseCSVLine(line)
                     const [category, order, key, displayName, hideInStatsPanel,
-                           description, isPercent, baseValue, minValue, maxValue, emoji] = 
-                           line.split(',').map(cell => cell.trim())
+                           description, isPercent, baseValue, minValue, maxValue, emoji] = fields
                     
                     // Create stat definition
                     const def: StatDefinition = {
                         key,
                         displayName,
                         baseValue: parseFloat(baseValue) || 0,
-                        minValue: minValue ? parseFloat(minValue) : undefined,
-                        maxValue: maxValue ? parseFloat(maxValue) : undefined,
+                        minValue: minValue && minValue !== '""' ? parseFloat(minValue) : undefined,
+                        maxValue: maxValue && maxValue !== '""' ? parseFloat(maxValue) : undefined,
                         isPercent: isPercent === 'TRUE',
                         hideInStatsPanel: hideInStatsPanel === 'TRUE',
-                        emoji: emoji || ''
+                        emoji: emoji && emoji !== '""' ? emoji.replace(/"/g, '') : ''
                     }
                     
                     // Store definition and initialize base stat

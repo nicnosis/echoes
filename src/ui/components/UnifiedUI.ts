@@ -12,6 +12,7 @@ export class UnifiedUI {
   private dynamicContent: HTMLElement | null = null
   private statsPanel: StatsPanel
   private currentScreen: UIScreen | null = null
+  private pendingStatsUpdate: Player | null = null
   
   // Content templates (loaded once)
   private contentTemplates: Map<UIScreen, string> = new Map()
@@ -123,6 +124,12 @@ export class UnifiedUI {
       if (statsContainer && this.statsPanel) {
         await this.statsPanel.initialize()
         this.statsPanel.setContainer(statsContainer)
+        
+        // Trigger any pending stats updates now that container is ready
+        if (this.pendingStatsUpdate) {
+          this.statsPanel.update(this.pendingStatsUpdate)
+          this.pendingStatsUpdate = null
+        }
       }
       
       console.log('✅ UnifiedUI container initialized and positioned over canvas')
@@ -187,7 +194,13 @@ export class UnifiedUI {
 
   // Update methods for different data types
   public updateStats(player: Player): void {
-    this.statsPanel.update(player)
+    // Only update if container is initialized
+    if (this.statsPanel.getContainer()) {
+      this.statsPanel.update(player)
+    } else {
+      console.log('⏳ Delaying stats update until container is ready')
+      this.pendingStatsUpdate = player
+    }
   }
 
   public updateWaveInfo(waveNumber: number, timer: number): void {
