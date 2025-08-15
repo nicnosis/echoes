@@ -12,8 +12,12 @@ export class DebugSystem {
     private onRestart: (() => void) | null = null;
     private onEndWave: (() => void) | null = null;
 
+    // Visual debug options
+    public showBounds: boolean = true;
+
     constructor() {
         this.setupKeyListeners();
+        this.createDebugUI();
     }
 
     // Initialize debug callbacks
@@ -82,4 +86,61 @@ export class DebugSystem {
             }
         });
     }
+
+    // Create debug UI elements
+    private createDebugUI() {
+        // Create debug panel container
+        const debugPanel = document.createElement('div');
+        debugPanel.id = 'debug-panel';
+        debugPanel.style.cssText = `
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            z-index: 1000;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 8px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 12px;
+        `;
+
+        // Create showBounds checkbox
+        const showBoundsLabel = document.createElement('label');
+        showBoundsLabel.style.cssText = `
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+        `;
+
+        const showBoundsCheckbox = document.createElement('input');
+        showBoundsCheckbox.type = 'checkbox';
+        showBoundsCheckbox.id = 'showBounds';
+        showBoundsCheckbox.checked = this.showBounds;
+        
+        // Update debug state when checkbox changes
+        showBoundsCheckbox.addEventListener('change', (e) => {
+            this.showBounds = (e.target as HTMLInputElement).checked;
+            console.log('Debug showBounds:', this.showBounds);
+        });
+
+        const showBoundsText = document.createTextNode('Show Bounds');
+        
+        showBoundsLabel.appendChild(showBoundsCheckbox);
+        showBoundsLabel.appendChild(showBoundsText);
+        debugPanel.appendChild(showBoundsLabel);
+
+        // Add to body when DOM is ready
+        if (document.body) {
+            document.body.appendChild(debugPanel);
+        } else {
+            document.addEventListener('DOMContentLoaded', () => {
+                document.body.appendChild(debugPanel);
+            });
+        }
+    }
 } 
+
+// Export singleton instance for easy access
+export const debug = new DebugSystem();

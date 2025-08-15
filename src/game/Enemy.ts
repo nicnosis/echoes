@@ -1,5 +1,6 @@
 import { Renderer } from '../render/Renderer'
 import { Player } from './Player'
+import { debug } from '../utils/Debug'
 
 // Base speed constant for reference (same as Player)
 const BASE_MOVE_SPEED = 100
@@ -132,10 +133,12 @@ export class Enemy {
         const spriteY = this.y - scaledHeight / 2
         renderer.drawImage(this.sprite, spriteX, spriteY, scaledWidth, scaledHeight, !this.facingRight)
 
-        // Draw cyan hitbox outline for debugging (using original dimensions)
-        const hitboxX = this.x - this.width / 2
-        const hitboxY = this.y - this.height / 2
-        renderer.drawRectStroke(hitboxX, hitboxY, this.width, this.height, 'cyan', 2)
+        // Debug: Draw cyan hitbox outline (using original dimensions)
+        if (debug.showBounds) {
+            const hitboxX = this.x - this.width / 2
+            const hitboxY = this.y - this.height / 2
+            renderer.drawRectStroke(hitboxX, hitboxY, this.width, this.height, 'cyan', 2)
+        }
     }
 
     getBounds() {

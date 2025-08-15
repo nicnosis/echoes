@@ -7,6 +7,7 @@ import { Stats } from './stats/Stats'
 import { XPTable } from './stats/XPTable'
 import { BodyPart, BODY_POSITIONS } from './BodyPart'
 import { BodyPartLoader } from './BodyPartLoader'
+import { debug } from '../utils/Debug'
 
 export class Player {
     public x: number
@@ -242,19 +243,25 @@ export class Player {
     // RENDERING METHODS
     // =============================================================================
     render(renderer: Renderer) {
-        // Draw cyan hitbox outline (box) - stroke only (drawOrder: 950)
-        renderer.drawRectStroke(this.x - this.width / 2, this.y - this.height / 2, this.width, this.height, '#00ffff', 2)
+        // Debug: Draw cyan hitbox outline (box) - stroke only (drawOrder: 950)
+        if (debug.showBounds) {
+            renderer.drawRectStroke(this.x - this.width / 2, this.y - this.height / 2, this.width, this.height, '#00ffff', 2)
+        }
 
         // Render body part sprites and debug nodes
         this.renderBodyPartNodes(renderer)
 
-        // Render weapon ranges
-        this.weapons.forEach(weapon => {
-            this.renderWeaponRange(renderer, weapon)
-        })
+        // Debug: Render weapon ranges
+        if (debug.showBounds) {
+            this.weapons.forEach(weapon => {
+                this.renderWeaponRange(renderer, weapon)
+            })
+        }
 
-        // Render pickup radius
-        this.renderPickupRadius(renderer)
+        // Debug: Render pickup radius
+        if (debug.showBounds) {
+            this.renderPickupRadius(renderer)
+        }
 
         // Render projectiles
         this.projectiles.forEach(projectile => {
@@ -442,9 +449,11 @@ export class Player {
             this.renderArmSprite(renderer, bodyPart, this.x - 15, this.y + position.y) // Left arm
             this.renderArmSprite(renderer, bodyPart, this.x + 15, this.y + position.y) // Right arm
 
-            // Debug circles for both arms (drawOrder: 960)
-            renderer.drawCircle(this.x - 15, this.y + position.y, 4, '#ff69b4', 2, true)
-            renderer.drawCircle(this.x + 15, this.y + position.y, 4, '#ff69b4', 2, true)
+            // Debug: Pink circles for both arms (drawOrder: 960)
+            if (debug.showBounds) {
+                renderer.drawCircle(this.x - 15, this.y + position.y, 4, '#ff69b4', 2, true)
+                renderer.drawCircle(this.x + 15, this.y + position.y, 4, '#ff69b4', 2, true)
+            }
         } else {
             // Regular single body part
             const worldX = this.x + position.x
@@ -452,8 +461,10 @@ export class Player {
 
             this.renderSingleSprite(renderer, bodyPart, worldX, worldY)
 
-            // Debug circle (drawOrder: 960)
-            renderer.drawCircle(worldX, worldY, 4, '#ff69b4', 2, true)
+            // Debug: Pink circle (drawOrder: 960)
+            if (debug.showBounds) {
+                renderer.drawCircle(worldX, worldY, 4, '#ff69b4', 2, true)
+            }
         }
     }
 
