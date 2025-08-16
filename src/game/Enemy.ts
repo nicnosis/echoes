@@ -137,7 +137,7 @@ export class Enemy {
         if (debug.showBounds) {
             const hitboxX = this.x - this.width / 2
             const hitboxY = this.y - this.height / 2
-            renderer.drawRectStroke(hitboxX, hitboxY, this.width, this.height, 'cyan', 2)
+            renderer.drawRect(hitboxX, hitboxY, this.width, this.height, 'cyan', { strokeOnly: true, lineWidth: 2 })
         }
     }
 

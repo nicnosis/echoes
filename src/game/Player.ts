@@ -236,7 +236,7 @@ export class Player {
     render(renderer: Renderer) {
         // Debug: Draw cyan hitbox outline
         if (debug.showBounds) {
-            renderer.drawRectStroke(this.x - this.width / 2, this.y - this.height / 2, this.width, this.height, '#00ffff', 2)
+            renderer.drawRect(this.x - this.width / 2, this.y - this.height / 2, this.width, this.height, '#00ffff', { strokeOnly: true, lineWidth: 2 })
         }
 
         // Render body parts with unified breathing animation

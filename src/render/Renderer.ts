@@ -20,20 +20,18 @@ export class Renderer {
     // Double buffering would go here if needed
   }
 
-  drawRect(x: number, y: number, width: number, height: number, color: string) {
-    this.ctx.fillStyle = color
-    this.ctx.fillRect(x, y, width, height)
-  }
-
-  drawRectWithOpacity(x: number, y: number, width: number, height: number, color: string) {
-    this.ctx.fillStyle = color
-    this.ctx.fillRect(x, y, width, height)
-  }
-
-  drawRectStroke(x: number, y: number, width: number, height: number, color: string, lineWidth: number = 1) {
-    this.ctx.strokeStyle = color
-    this.ctx.lineWidth = lineWidth
-    this.ctx.strokeRect(x, y, width, height)
+  drawRect(x: number, y: number, width: number, height: number, color: string, options?: {
+    strokeOnly?: boolean
+    lineWidth?: number
+  }) {
+    if (options?.strokeOnly) {
+      this.ctx.strokeStyle = color
+      this.ctx.lineWidth = options.lineWidth || 1
+      this.ctx.strokeRect(x, y, width, height)
+    } else {
+      this.ctx.fillStyle = color
+      this.ctx.fillRect(x, y, width, height)
+    }
   }
 
   drawCircle(x: number, y: number, radius: number, color: string, lineWidth: number = 0, strokeOnly: boolean = false) {
