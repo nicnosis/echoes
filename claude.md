@@ -608,6 +608,111 @@ private recalculateStats(): void {
 
 ---
 
+## Development Guidelines & Best Practices
+
+### System Analysis Protocol
+
+**Key Systems to Always Examine Before Implementation:**
+1. **Game Core Loop** - WAVE/LEVELUP/SHOP phase transitions and timing
+2. **Stats System** - Three-layer architecture (base + levelUp + gear = total)
+3. **Body Parts/Equipment** - CSV-driven with stat integration and scaling
+4. **UI System** - UnifiedUI with dynamic content switching and callbacks
+5. **Animation System** - Sine wave breathing effects and intensity ramping
+6. **Debug System** - External HTML panels with real-time toggles
+
+### Implementation Best Practices
+
+**Before Writing Any Code:**
+- Read existing related files (Stats.ts, Player.ts, Game.ts, etc.)
+- Check for existing methods that do similar work
+- Understand established patterns and data flows
+- Look for extension points rather than creating parallel systems
+
+**Integration Over Duplication:**
+- Extend existing methods rather than create new ones
+- Use established data flows (e.g., CSV → stats → UI)
+- Follow existing patterns (e.g., semantic column access with `row['columnName']`)
+- Respect the three-layer stats architecture
+
+**Critical Questions to Ask:**
+- "Does the stats system already handle this?"
+- "Is there an existing UI pattern I should follow?"
+- "What would break if I change this system?"
+- "Am I reinventing something that already exists?"
+
+### Method Naming Standards
+
+**Good Examples:**
+- `recalculateStats()` - Clear action, single responsibility
+- `updateGear()` - Concise, uses domain vocabulary
+- `heal()` - Simple verb matching the domain
+
+**Bad Examples:**
+- `updateGearFromStatsForBodyPart()` - Too verbose, unclear responsibility
+- `doStatStuffForPlayer()` - Vague, unprofessional
+- `handleTheThing()` - No domain meaning
+
+**Guidelines:**
+- Single responsibility principle in names
+- Use existing vocabulary from the system
+- Prefer domain-specific verbs (`heal` vs `changeHP`)
+- Keep method names under 20 characters when possible
+
+### Ownership & Responsibility Rules
+
+**Clear Ownership Patterns:**
+- **Player** should always handle its own stats, HP, movement, and body parts
+- **Game** manages phases, timing, and coordination between systems
+- **SpawnManager** owns enemy spawning logic and pre-spawn indicators
+- **UnifiedUI** handles all screen transitions and user input callbacks
+- **Stats** class manages stat calculations but never game logic
+- **BodyPart** objects are data containers, logic belongs in Player
+
+**Never Cross Boundaries:**
+- Game should never directly modify Player.stats - use Player methods
+- UI should never directly access game state - use callbacks
+- Stats should never know about Player - Player knows about Stats
+- SpawnManager should never modify Player - return data for Game to handle
+
+**Examples:**
+```typescript
+// ✅ Good - Player owns its stats
+player.heal(amount)
+player.stats.recalculateStats(this.body)
+
+// ❌ Bad - External manipulation
+player.stats.currentHP += amount
+game.modifyPlayerStats(changes)
+
+// ✅ Good - Clear data flow
+const spawnResult = spawnManager.update(deltaTime, player, enemies)
+enemies.push(...spawnResult.newEnemies)
+
+// ❌ Bad - Boundary violation
+spawnManager.addEnemiesToGame(game)
+```
+
+### System Extension Guidelines
+
+**When Working with Stats System:**
+- Always use the three-layer approach (base + levelUp + gear)
+- Stats change at runtime through player actions, never CSV modification
+- Use `getStat()` and `setStat()` methods, not direct property access
+- CSV files define the system structure but never change during gameplay
+
+**When Adding to UI System:**
+- Follow the UnifiedUI pattern with dynamic content switching
+- Add new screens to UIScreen enum and content templates
+- Use callback pattern to communicate with Game
+
+**CSV File Policy:**
+- **NEVER modify CSV files without explicit developer permission**
+- CSV files are configuration data, not runtime data
+- bodyparts.csv, stats.csv, etc. define system structure only
+- All gameplay changes happen through the code layer, not data files
+
+---
+
 ## Development Commands
 
 **Testing**: Launch `npm run dev` and view at localhost (port will be displayed)
