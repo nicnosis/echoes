@@ -427,6 +427,19 @@ export class Player {
 
     // Render body part sprites and debug nodes in draw order
     private renderBodyPartNodes(renderer: Renderer): void {
+        // Calculate breathing animation for entire character assembly
+        const timeInRadians = (this.animationTime / this.animationPeriod) * 2 * Math.PI
+        const sineValue = Math.sin(timeInRadians + this.animationOffset)
+        const scaleVariation = 0.15 // ±15%
+        const widthScale = 1 + (sineValue * scaleVariation * this.animationIntensity)
+        const heightScale = 1 - (sineValue * scaleVariation * this.animationIntensity) // Inverse relationship
+
+        // Save canvas state and apply breathing transform to entire character
+        renderer.ctx.save()
+        renderer.ctx.translate(this.x, this.y) // Move to player center
+        renderer.ctx.scale(widthScale, heightScale) // Apply breathing scale
+        renderer.ctx.translate(-this.x, -this.y) // Move back
+
         // Create array of body parts with their positions and sort by drawOrder
         const sortedBodyParts = this.body
             .map(bodyPart => ({
@@ -436,10 +449,13 @@ export class Player {
             .filter(item => item.position)
             .sort((a, b) => a.position.drawOrder - b.position.drawOrder)
 
-        // Render each body part in draw order
+        // Render each body part in draw order (they will inherit the breathing transform)
         sortedBodyParts.forEach(({ bodyPart, position }) => {
             this.renderBodyPart(renderer, bodyPart, position)
         })
+
+        // Restore canvas state
+        renderer.ctx.restore()
     }
 
     // Render a single body part (with special handling for arms)
@@ -459,7 +475,7 @@ export class Player {
             const worldX = this.x + position.x
             const worldY = this.y + position.y
 
-            this.renderSingleSprite(renderer, bodyPart, worldX, worldY)
+            this.renderSprite(renderer, bodyPart, worldX, worldY)
 
             // Debug: Pink circle (drawOrder: 960)
             if (debug.showBounds) {
@@ -473,42 +489,33 @@ export class Player {
         if (bodyPart.isLoaded()) {
             const sprite = bodyPart.getSprite()
             if (sprite) {
-                this.renderSingleSprite(renderer, bodyPart, x, y)
+                this.renderSprite(renderer, bodyPart, x, y)
             }
         }
     }
 
     // Render a sprite at given world coordinates
-    private renderSingleSprite(renderer: Renderer, bodyPart: BodyPart, worldX: number, worldY: number): void {
+    private renderSprite(renderer: Renderer, bodyPart: BodyPart, worldX: number, worldY: number): void {
         if (bodyPart.isLoaded()) {
             const sprite = bodyPart.getSprite()
             if (sprite) {
-                // Calculate movement animation scaling
-                const timeInRadians = (this.animationTime / this.animationPeriod) * 2 * Math.PI
-                const sineValue = Math.sin(timeInRadians + this.animationOffset)
-                const scaleVariation = 0.15 // ±15%
-                const widthScale = 1 + (sineValue * scaleVariation * this.animationIntensity)
-                const heightScale = 1 - (sineValue * scaleVariation * this.animationIntensity) // Inverse relationship
-                
-                // Use native image size multiplied by body part scale
-                const baseWidth = sprite.naturalWidth * bodyPart.scale
-                const baseHeight = sprite.naturalHeight * bodyPart.scale
-                const scaledWidth = baseWidth * widthScale
-                const scaledHeight = baseHeight * heightScale
-                const spriteX = worldX - scaledWidth / 2
-                const spriteY = worldY - scaledHeight / 2
+                // Use native image size multiplied by body part scale (no individual breathing animation)
+                const finalWidth = sprite.naturalWidth * bodyPart.scale
+                const finalHeight = sprite.naturalHeight * bodyPart.scale
+                const spriteX = worldX - finalWidth / 2
+                const spriteY = worldY - finalHeight / 2
 
                 // Apply damage flash effect
                 if (this.damageFlashTimer > 0) {
                     renderer.ctx.save()
-                    renderer.drawImage(sprite, spriteX, spriteY, scaledWidth, scaledHeight, !this.facingRight)
+                    renderer.drawImage(sprite, spriteX, spriteY, finalWidth, finalHeight, !this.facingRight)
                     // Use multiply blend mode for red tint
                     renderer.ctx.globalCompositeOperation = 'multiply'
                     renderer.ctx.fillStyle = '#ff6666'
-                    renderer.ctx.fillRect(spriteX, spriteY, scaledWidth, scaledHeight)
+                    renderer.ctx.fillRect(spriteX, spriteY, finalWidth, finalHeight)
                     renderer.ctx.restore()
                 } else {
-                    renderer.drawImage(sprite, spriteX, spriteY, scaledWidth, scaledHeight, !this.facingRight)
+                    renderer.drawImage(sprite, spriteX, spriteY, finalWidth, finalHeight, !this.facingRight)
                 }
             }
         }
