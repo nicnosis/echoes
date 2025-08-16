@@ -212,8 +212,13 @@ export class Game {
     this.ui.updateWaveTimer(this.waveTimer)
     
     // Spawn enemies using the spawn manager
-    const newEnemies = this.spawnManager.update(deltaTime, this.player, this.enemies)
-    this.enemies.push(...newEnemies)
+    const spawnResult = this.spawnManager.update(deltaTime, this.player, this.enemies)
+    this.enemies.push(...spawnResult.newEnemies)
+    
+    // Create floating text for blocked spawns
+    spawnResult.blockedSpawns.forEach(blockedSpawn => {
+      this.floatingTexts.push(new FloatingText(blockedSpawn.x, blockedSpawn.y - 20, 0, false, 'Spawn Blocked'))
+    })
     
     // Update game objects
     this.updateEnemies(deltaTime)
@@ -264,6 +269,30 @@ export class Game {
   }
 
   // =============================================================================
+  // CLEANUP METHODS
+  // =============================================================================
+
+  // Comprehensive cleanup of all game objects at wave end
+  private cleanup(): void {
+    // Reset player position to center
+    this.player.x = this.canvas.width / 2
+    this.player.y = this.canvas.height / 2
+    
+    // Clear all game objects
+    this.enemies = []
+    this.somaList = []
+    this.floatingTexts = []
+    
+    // Clear spawn manager indicators and reset state
+    this.spawnManager.cleanup()
+    
+    // Clear any projectiles
+    this.player.projectiles = []
+    
+    console.log('🧹 Game objects cleaned up')
+  }
+
+  // =============================================================================
   // PHASE TRANSITION METHODS
   // =============================================================================
 
@@ -281,10 +310,6 @@ export class Game {
     this.player.stats.recalculateStats(this.player.body)
     this.player.heal()
     
-    // Clear game objects
-    this.enemies = []
-    this.somaList = []
-    
     // Configure spawn manager for this wave (assuming this method exists)
     // this.spawnManager.configureWave(this.waveIndex)
     
@@ -300,13 +325,12 @@ export class Game {
   private endWave(): void {
     console.log(`✅ Wave ${this.waveIndex + 1} completed`)
     
-    // Cleanup remaining objects
-    this.cleanupSoma()
-    this.enemies = []
-    
-    // Calculate level up credits
+    // Calculate level up credits before cleanup
     const currentLevel = this.player.stats.level
     this.levelUpCredits = currentLevel - this.waveLevelStartedAt
+    
+    // Comprehensive cleanup of all game objects
+    this.cleanup()
     
     // Recalculate stats and heal to full for wave end
     this.player.stats.recalculateStats(this.player.body)

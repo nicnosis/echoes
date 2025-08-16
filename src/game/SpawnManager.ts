@@ -21,8 +21,9 @@ export class SpawnManager {
         this.canvasHeight = canvasHeight
     }
 
-    update(deltaTime: number, player: Player, enemies: Enemy[]): Enemy[] {
+    update(deltaTime: number, player: Player, enemies: Enemy[]): { newEnemies: Enemy[], blockedSpawns: Array<{x: number, y: number}> } {
         const newEnemies: Enemy[] = []
+        const blockedSpawns: Array<{x: number, y: number}> = []
 
         // Calculate total enemy count (current enemies + queued prespawns)
         const totalEnemyCount = this.getTotalEnemyCount(enemies)
@@ -58,19 +59,22 @@ export class SpawnManager {
             const indicator = this.preSpawnIndicators[i]
 
             // Update the indicator and check if it should spawn an enemy
-            const shouldSpawn = indicator.update(deltaTime, player)
+            const result = indicator.update(deltaTime, player)
 
-            if (shouldSpawn) {
+            if (result.shouldSpawn) {
                 // Spawn enemy at indicator location
-                newEnemies.push(new Enemy(indicator.x, indicator.y))
+                newEnemies.push(new Enemy(result.x, result.y))
                 this.preSpawnIndicators.splice(i, 1) // Remove the indicator
+            } else if (result.blocked) {
+                // Spawn was blocked by player - record for floating text
+                blockedSpawns.push({ x: result.x, y: result.y })
             } else if (!indicator.isActive) {
                 // Remove inactive indicators
                 this.preSpawnIndicators.splice(i, 1)
             }
         }
 
-        return newEnemies
+        return { newEnemies, blockedSpawns }
     }
 
     private generateRandomLocation(player: Player): { x: number, y: number } {
@@ -152,5 +156,13 @@ export class SpawnManager {
     // Get current missed spawn bonus for debugging
     getMissedSpawnBonus(): number {
         return this.missedSpawnBonus
+    }
+
+    // Clear all pre-spawn indicators (called at wave end)
+    cleanup(): void {
+        this.preSpawnIndicators = []
+        this.spawnTimer = 0
+        this.missedSpawnBonus = 0
+        this.currentSpawnProbability = this.baseSpawnProbability
     }
 } 

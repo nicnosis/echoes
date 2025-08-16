@@ -20,8 +20,8 @@ export class PreSpawnIndicator {
         this.isActive = true
     }
 
-    update(deltaTime: number, player: Player): boolean {
-        if (!this.isActive) return false
+    update(deltaTime: number, player: Player): { shouldSpawn: boolean, blocked: boolean, x: number, y: number } {
+        if (!this.isActive) return { shouldSpawn: false, blocked: false, x: this.x, y: this.y }
 
         this.timer -= deltaTime
         this.pulseTimer += deltaTime
@@ -36,16 +36,18 @@ export class PreSpawnIndicator {
 
             if (distance < collisionDistance) {
                 // Player is in collision, reset and move
+                const oldX = this.x
+                const oldY = this.y
                 this.resetAndMove(player)
-                return false
+                return { shouldSpawn: false, blocked: true, x: oldX, y: oldY }
             } else {
                 // No collision, spawn enemy
                 this.isActive = false
-                return true
+                return { shouldSpawn: true, blocked: false, x: this.x, y: this.y }
             }
         }
 
-        return false
+        return { shouldSpawn: false, blocked: false, x: this.x, y: this.y }
     }
 
     private resetAndMove(player: Player) {

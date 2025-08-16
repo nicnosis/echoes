@@ -13,7 +13,7 @@ export class DebugSystem {
     private onEndWave: (() => void) | null = null;
 
     // Visual debug options
-    public showBounds: boolean = true;
+    public showBounds: boolean = false;
 
     constructor() {
         this.setupKeyListeners();
