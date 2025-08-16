@@ -37,8 +37,8 @@ echoes/
 ```typescript
 enum GamePhase {
   WAVE = 'wave',     // Combat gameplay
-  LEVELUP = 'levelup', // Stat selection
-  SHOP = 'shop'      // Body part marketplace
+  LEVELUP = 'levelup', // Levelup bonus selection
+  SHOP = 'shop'      // Gear/Items Marketplace
 }
 ```
 
@@ -81,7 +81,7 @@ private cleanup(): void {
 - WASD movement with configurable speed
 - Mouse-based aiming and firing
 - Collision detection using rectangular bounds
-- Movement affects animation intensity
+- Movement affects breathing amplitude and period
 
 **Breathing Animation System:**
 ```typescript
@@ -311,24 +311,19 @@ this.ui.updateStats(this.player)
 ```typescript
 // Universal animation pattern
 const sineValue = Math.sin(this.animationTime + this.animationOffset)
-const scaleX = this.baseWidth * (1 + scaleVariation * sineValue)
-const scaleY = this.baseHeight * (1 - scaleVariation * sineValue)
+const widthScale = 1 + (sineValue * amplitude)
+const heightScale = 1 - (sineValue * amplitude)
 ```
 
 **Animation Parameters by Entity:**
-- **Player**: ±15% scale, 350ms period, only during movement
-- **Enemies**: ±12% scale, 750ms period, always active
+- **Player**: Unified character assembly breathing using Canvas transforms, different amplitude/period for moving vs static
+- **Enemies**: Individual breathing, always active
 - **Unique Offsets**: Prevent synchronized movement across entities
 
-**Movement Intensity System:**
-```typescript
-// Player animation ramps up/down based on movement
-if (isMoving) {
-  this.movementAnimationIntensity = Math.min(1.0, this.movementAnimationIntensity + deltaTime / 200)
-} else {
-  this.movementAnimationIntensity = Math.max(0.0, this.movementAnimationIntensity - deltaTime / 300)
-}
-```
+**Player Character Assembly:**
+- Canvas save/restore transforms applied to entire character
+- All body parts breathe together from character center
+- Movement state affects breathing intensity and speed
 
 ### Rendering Pipeline
 
@@ -617,7 +612,7 @@ private recalculateStats(): void {
 2. **Stats System** - Three-layer architecture (base + levelUp + gear = total)
 3. **Body Parts/Equipment** - CSV-driven with stat integration and scaling
 4. **UI System** - UnifiedUI with dynamic content switching and callbacks
-5. **Animation System** - Sine wave breathing effects and intensity ramping
+5. **Animation System** - Sine wave breathing effects with Canvas transforms
 6. **Debug System** - External HTML panels with real-time toggles
 
 ### Implementation Best Practices

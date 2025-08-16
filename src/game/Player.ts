@@ -9,6 +9,18 @@ import { BodyPart, BODY_POSITIONS } from './BodyPart'
 import { BodyPartLoader } from './BodyPartLoader'
 import { debug } from '../utils/Debug'
 
+/**
+ * Player class for the Echoes roguelike game
+ * 
+ * TABLE OF CONTENTS:
+ * 1. INITIALIZATION
+ * 2. UPDATE METHODS  
+ * 3. RENDERING
+ * 4. COMBAT & DAMAGE
+ * 5. STATS, XP & LEVELING
+ * 6. EQUIPMENT MANAGEMENT
+ * 7. UTILITY METHODS
+ */
 export class Player {
     public x: number
     public y: number
@@ -49,10 +61,8 @@ export class Player {
 
     // Movement animation properties
     private animationTime: number = 0
-    private animationPeriod: number = 350 // Period in milliseconds for full cycle
     private animationOffset: number = Math.random() * Math.PI * 2 // Random start phase
     private isMoving: boolean = false
-    private animationIntensity: number = 0 // 0-1, how much animation to apply
 
     constructor(x: number, y: number) {
         this.x = x
@@ -100,7 +110,11 @@ export class Player {
     }
 
     // =============================================================================
-    // UPDATE METHODS
+    // End section 1. INITIALIZATION
+    // =============================================================================
+
+    // =============================================================================
+    // 2. UPDATE METHODS
     // =============================================================================
 
     update(deltaTime: number, inputState: InputState, canvasWidth: number, canvasHeight: number, enemies: Enemy[]) {
@@ -162,27 +176,10 @@ export class Player {
 
     // Update movement animation based on player movement
     private updateMovementAnimation(deltaTime: number, dx: number, dy: number) {
-        const wasMoving = this.isMoving
         this.isMoving = dx !== 0 || dy !== 0
-
-        if (this.isMoving) {
-            // Player is moving - animate normally and increase intensity
-            this.animationTime += deltaTime
-            this.animationIntensity = Math.min(1, this.animationIntensity + (deltaTime / 200)) // Ramp up over 200ms
-        } else {
-            // Player stopped - gradually reduce animation intensity
-            this.animationIntensity = Math.max(0, this.animationIntensity - (deltaTime / 200)) // Ramp down over 200ms
-            
-            if (this.animationIntensity > 0) {
-                // Continue time but move towards nearest zero point (0 or Math.PI)
-                const currentPhase = (this.animationTime / this.animationPeriod) * 2 * Math.PI + this.animationOffset
-                const currentSine = Math.sin(currentPhase)
-                
-                // Move towards zero sine (either up or down depending on which is closer)
-                const timeStep = deltaTime * (currentSine > 0 ? 1 : -1)
-                this.animationTime += timeStep
-            }
-        }
+        
+        // Always update animation time for breathing effect
+        this.animationTime += deltaTime
     }
 
     private updateWeapons(deltaTime: number, enemies: Enemy[]) {
@@ -201,16 +198,6 @@ export class Player {
             }
         })
     }
-
-    // private findNextAvailableWeapon(): { weapon: Weapon | null, index: number } {
-    //     for (let i = 0; i < this.weapons.length; i++) {
-    //         const weapon = this.weapons[i]
-    //         if (weapon.canFire()) {
-    //             return { weapon, index: i }
-    //         }
-    //     }
-    //     return { weapon: null, index: -1 }
-    // }
 
     private findClosestEnemyInRange(weapon: Weapon, enemies: Enemy[]): Enemy | null {
         let closestEnemy: Enemy | null = null
@@ -240,27 +227,53 @@ export class Player {
     }
 
     // =============================================================================
-    // RENDERING METHODS
+    // End section 2. UPDATE METHODS
+    // =============================================================================
+
+    // =============================================================================
+    // 3. RENDERING
     // =============================================================================
     render(renderer: Renderer) {
-        // Debug: Draw cyan hitbox outline (box) - stroke only (drawOrder: 950)
+        // Debug: Draw cyan hitbox outline
         if (debug.showBounds) {
             renderer.drawRectStroke(this.x - this.width / 2, this.y - this.height / 2, this.width, this.height, '#00ffff', 2)
         }
 
-        // Render body part sprites and debug nodes
-        this.renderBodyPartNodes(renderer)
+        // Render body parts with unified breathing animation
+        const amplitude = this.isMoving ? 0.15 : 0.08 // ±15% moving, ±8% static
+        const period = this.isMoving ? 350 : 500 // 350ms moving, 500ms static
+        const timeInRadians = (this.animationTime / period) * 2 * Math.PI
+        const sineValue = Math.sin(timeInRadians + this.animationOffset)
+        const widthScale = 1 + (sineValue * amplitude)
+        const heightScale = 1 - (sineValue * amplitude)
 
-        // Debug: Render weapon ranges
+        // Apply breathing transform to entire character
+        renderer.ctx.save()
+        renderer.ctx.translate(this.x, this.y)
+        renderer.ctx.scale(widthScale, heightScale)
+        renderer.ctx.translate(-this.x, -this.y)
+
+        // Render body parts in draw order
+        const sortedBodyParts = this.body
+            .map(bodyPart => ({
+                bodyPart,
+                position: BODY_POSITIONS[bodyPart.type as keyof typeof BODY_POSITIONS]
+            }))
+            .filter(item => item.position)
+            .sort((a, b) => a.position.drawOrder - b.position.drawOrder)
+
+        sortedBodyParts.forEach(({ bodyPart, position }) => {
+            this.renderBodyPart(renderer, bodyPart, position)
+        })
+
+        renderer.ctx.restore()
+
+        // Debug: Render weapon ranges and pickup radius
         if (debug.showBounds) {
             this.weapons.forEach(weapon => {
-                this.renderWeaponRange(renderer, weapon)
+                renderer.drawCircle(this.x, this.y, weapon.range, '#ffffff', 1, true)
             })
-        }
-
-        // Debug: Render pickup radius
-        if (debug.showBounds) {
-            this.renderPickupRadius(renderer)
+            renderer.drawCircle(this.x, this.y, this.pickupRadius, '#00ff00', 1, true)
         }
 
         // Render projectiles
@@ -269,16 +282,45 @@ export class Player {
         })
     }
 
-    private renderWeaponRange(renderer: Renderer, weapon: Weapon) {
-        renderer.drawCircle(this.x, this.y, weapon.range, '#ffffff', 1, true)
-    }
+    // Render a single body part
+    private renderBodyPart(renderer: Renderer, bodyPart: BodyPart, position: any): void {
+        const worldX = this.x + position.x
+        const worldY = this.y + position.y
 
-    private renderPickupRadius(renderer: Renderer) {
-        renderer.drawCircle(this.x, this.y, this.pickupRadius, '#00ff00', 1, true)
+        if (bodyPart.isLoaded()) {
+            const sprite = bodyPart.getSprite()
+            if (sprite) {
+                const finalWidth = sprite.naturalWidth * bodyPart.scale
+                const finalHeight = sprite.naturalHeight * bodyPart.scale
+                const spriteX = worldX - finalWidth / 2
+                const spriteY = worldY - finalHeight / 2
+
+                // Apply damage flash effect
+                if (this.damageFlashTimer > 0) {
+                    renderer.ctx.save()
+                    renderer.drawImage(sprite, spriteX, spriteY, finalWidth, finalHeight, !this.facingRight)
+                    renderer.ctx.globalCompositeOperation = 'multiply'
+                    renderer.ctx.fillStyle = '#ff6666'
+                    renderer.ctx.fillRect(spriteX, spriteY, finalWidth, finalHeight)
+                    renderer.ctx.restore()
+                } else {
+                    renderer.drawImage(sprite, spriteX, spriteY, finalWidth, finalHeight, !this.facingRight)
+                }
+            }
+        }
+
+        // Debug: Pink circle for body part position
+        if (debug.showBounds) {
+            renderer.drawCircle(worldX, worldY, 4, '#ff69b4', 2, true)
+        }
     }
 
     // =============================================================================
-    // COMBAT & DAMAGE
+    // End section 3. RENDERING
+    // =============================================================================
+
+    // =============================================================================
+    // 4. COMBAT & DAMAGE
     // =============================================================================
 
     // Take damage and return actual damage dealt (0 if blocked)
@@ -352,7 +394,11 @@ export class Player {
     }
 
     // =============================================================================
-    // STATS, XP & LEVELING
+    // End section 4. COMBAT & DAMAGE
+    // =============================================================================
+
+    // =============================================================================
+    // 5. STATS, XP & LEVELING
     // =============================================================================
 
     gainXP(amount: number): boolean {
@@ -387,11 +433,6 @@ export class Player {
         this.stats.addLevelUpStat(stat, bonusAmount)
     }
 
-    // Get display stats for UI
-    getDisplayStats() {
-        return this.stats.getDisplayStats()
-    }
-
     // Heal player by amount or to full if no argument
     heal(amount?: number): void {
         const currentHP = this.stats.getCurrentHP()
@@ -405,6 +446,11 @@ export class Player {
             const newHP = Math.min(currentHP + amount, maxHP)
             this.stats.setCurrentHP(newHP)
         }
+    }
+
+    // Get display stats for UI
+    getDisplayStats() {
+        return this.stats.getDisplayStats()
     }
 
     // Convenient getters for commonly used stats
@@ -422,146 +468,11 @@ export class Player {
     get soma() { return this.stats.getStat('soma') }
 
     // =============================================================================
-    // RENDERING
+    // End section 5. STATS, XP & LEVELING
     // =============================================================================
 
-    // Render body part sprites and debug nodes in draw order
-    private renderBodyPartNodes(renderer: Renderer): void {
-        // Calculate breathing animation for entire character assembly
-        const timeInRadians = (this.animationTime / this.animationPeriod) * 2 * Math.PI
-        const sineValue = Math.sin(timeInRadians + this.animationOffset)
-        const scaleVariation = 0.15 // ±15%
-        const widthScale = 1 + (sineValue * scaleVariation * this.animationIntensity)
-        const heightScale = 1 - (sineValue * scaleVariation * this.animationIntensity) // Inverse relationship
-
-        // Save canvas state and apply breathing transform to entire character
-        renderer.ctx.save()
-        renderer.ctx.translate(this.x, this.y) // Move to player center
-        renderer.ctx.scale(widthScale, heightScale) // Apply breathing scale
-        renderer.ctx.translate(-this.x, -this.y) // Move back
-
-        // Create array of body parts with their positions and sort by drawOrder
-        const sortedBodyParts = this.body
-            .map(bodyPart => ({
-                bodyPart,
-                position: BODY_POSITIONS[bodyPart.type as keyof typeof BODY_POSITIONS]
-            }))
-            .filter(item => item.position)
-            .sort((a, b) => a.position.drawOrder - b.position.drawOrder)
-
-        // Render each body part in draw order (they will inherit the breathing transform)
-        sortedBodyParts.forEach(({ bodyPart, position }) => {
-            this.renderBodyPart(renderer, bodyPart, position)
-        })
-
-        // Restore canvas state
-        renderer.ctx.restore()
-    }
-
-    // Render a single body part (with special handling for arms)
-    private renderBodyPart(renderer: Renderer, bodyPart: BodyPart, position: any): void {
-        if (bodyPart.type === 'arms') {
-            // Render arms symmetrically at left and right positions
-            this.renderArmSprite(renderer, bodyPart, this.x - 15, this.y + position.y) // Left arm
-            this.renderArmSprite(renderer, bodyPart, this.x + 15, this.y + position.y) // Right arm
-
-            // Debug: Pink circles for both arms (drawOrder: 960)
-            if (debug.showBounds) {
-                renderer.drawCircle(this.x - 15, this.y + position.y, 4, '#ff69b4', 2, true)
-                renderer.drawCircle(this.x + 15, this.y + position.y, 4, '#ff69b4', 2, true)
-            }
-        } else {
-            // Regular single body part
-            const worldX = this.x + position.x
-            const worldY = this.y + position.y
-
-            this.renderSprite(renderer, bodyPart, worldX, worldY)
-
-            // Debug: Pink circle (drawOrder: 960)
-            if (debug.showBounds) {
-                renderer.drawCircle(worldX, worldY, 4, '#ff69b4', 2, true)
-            }
-        }
-    }
-
-    // Render arm sprite at specific position
-    private renderArmSprite(renderer: Renderer, bodyPart: BodyPart, x: number, y: number): void {
-        if (bodyPart.isLoaded()) {
-            const sprite = bodyPart.getSprite()
-            if (sprite) {
-                this.renderSprite(renderer, bodyPart, x, y)
-            }
-        }
-    }
-
-    // Render a sprite at given world coordinates
-    private renderSprite(renderer: Renderer, bodyPart: BodyPart, worldX: number, worldY: number): void {
-        if (bodyPart.isLoaded()) {
-            const sprite = bodyPart.getSprite()
-            if (sprite) {
-                // Use native image size multiplied by body part scale (no individual breathing animation)
-                const finalWidth = sprite.naturalWidth * bodyPart.scale
-                const finalHeight = sprite.naturalHeight * bodyPart.scale
-                const spriteX = worldX - finalWidth / 2
-                const spriteY = worldY - finalHeight / 2
-
-                // Apply damage flash effect
-                if (this.damageFlashTimer > 0) {
-                    renderer.ctx.save()
-                    renderer.drawImage(sprite, spriteX, spriteY, finalWidth, finalHeight, !this.facingRight)
-                    // Use multiply blend mode for red tint
-                    renderer.ctx.globalCompositeOperation = 'multiply'
-                    renderer.ctx.fillStyle = '#ff6666'
-                    renderer.ctx.fillRect(spriteX, spriteY, finalWidth, finalHeight)
-                    renderer.ctx.restore()
-                } else {
-                    renderer.drawImage(sprite, spriteX, spriteY, finalWidth, finalHeight, !this.facingRight)
-                }
-            }
-        }
-    }
-
     // =============================================================================
-    // VISUAL HELPERS
-    // =============================================================================
-
-    isDead(): boolean {
-        return this.stats.getCurrentHP() <= 0
-    }
-
-    getXPPercentage(): number {
-        const currentXP = this.stats.xp
-        const currentLevel = this.stats.level
-        return XPTable.getXPProgressInLevel(currentLevel, currentXP)
-    }
-
-    getBounds() {
-        return {
-            left: this.x - this.width / 2,
-            right: this.x + this.width / 2,
-            top: this.y - this.height / 2,
-            bottom: this.y + this.height / 2
-        }
-    }
-
-    addWeapon(weapon: Weapon): boolean {
-        if (this.weapons.length < this.maxWeapons) {
-            this.weapons.push(weapon)
-            return true
-        }
-        return false
-    }
-
-    // =============================================================================
-    // UTILITY METHODS
-    // =============================================================================
-
-    getPosition() {
-        return { x: this.x, y: this.y }
-    }
-
-    // =============================================================================
-    // EQUIPMENT MANAGEMENT
+    // 6. EQUIPMENT MANAGEMENT
     // =============================================================================
 
     // Replace a body part and update stats (for transformation system)
@@ -609,4 +520,47 @@ export class Player {
             this.equippedItems.splice(index, 1)
         }
     }
+
+    // =============================================================================
+    // End section 6. EQUIPMENT MANAGEMENT
+    // =============================================================================
+
+    // =============================================================================
+    // 7. UTILITY METHODS
+    // =============================================================================
+
+    isDead(): boolean {
+        return this.stats.getCurrentHP() <= 0
+    }
+
+    getXPPercentage(): number {
+        const currentXP = this.stats.xp
+        const currentLevel = this.stats.level
+        return XPTable.getXPProgressInLevel(currentLevel, currentXP)
+    }
+
+    getBounds() {
+        return {
+            left: this.x - this.width / 2,
+            right: this.x + this.width / 2,
+            top: this.y - this.height / 2,
+            bottom: this.y + this.height / 2
+        }
+    }
+
+    addWeapon(weapon: Weapon): boolean {
+        if (this.weapons.length < this.maxWeapons) {
+            this.weapons.push(weapon)
+            return true
+        }
+        return false
+    }
+
+    getPosition() {
+        return { x: this.x, y: this.y }
+    }
+
+    // =============================================================================
+    // End section 7. UTILITY METHODS
+    // =============================================================================
 }
