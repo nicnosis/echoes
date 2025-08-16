@@ -248,10 +248,11 @@ export class Player {
         const heightScale = 1 - (sineValue * amplitude)
 
         // Apply breathing transform to entire character
-        renderer.ctx.save()
-        renderer.ctx.translate(this.x, this.y)
-        renderer.ctx.scale(widthScale, heightScale)
-        renderer.ctx.translate(-this.x, -this.y)
+        const ctx = renderer.context
+        ctx.save()
+        ctx.translate(this.x, this.y)
+        ctx.scale(widthScale, heightScale)
+        ctx.translate(-this.x, -this.y)
 
         // Render body parts in draw order
         const sortedBodyParts = this.body
@@ -266,7 +267,7 @@ export class Player {
             this.renderBodyPart(renderer, bodyPart, position)
         })
 
-        renderer.ctx.restore()
+        ctx.restore()
 
         // Debug: Render weapon ranges and pickup radius
         if (debug.showBounds) {
@@ -297,12 +298,13 @@ export class Player {
 
                 // Apply damage flash effect
                 if (this.damageFlashTimer > 0) {
-                    renderer.ctx.save()
+                    const flashCtx = renderer.context
+                    flashCtx.save()
                     renderer.drawImage(sprite, spriteX, spriteY, finalWidth, finalHeight, !this.facingRight)
-                    renderer.ctx.globalCompositeOperation = 'multiply'
-                    renderer.ctx.fillStyle = '#ff6666'
-                    renderer.ctx.fillRect(spriteX, spriteY, finalWidth, finalHeight)
-                    renderer.ctx.restore()
+                    flashCtx.globalCompositeOperation = 'multiply'
+                    flashCtx.fillStyle = '#ff6666'
+                    flashCtx.fillRect(spriteX, spriteY, finalWidth, finalHeight)
+                    flashCtx.restore()
                 } else {
                     renderer.drawImage(sprite, spriteX, spriteY, finalWidth, finalHeight, !this.facingRight)
                 }

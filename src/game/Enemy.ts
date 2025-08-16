@@ -20,8 +20,6 @@ export class Enemy {
     private originalWidth: number = 45
     private originalHeight: number = 37.5
     private originalColor: string
-    private lastDamageTime: number = 0
-    private damageCooldown: number = 1000 // 1 second cooldown between damage
     private sprite: HTMLImageElement
     private previousX: number
     private facingRight: boolean = true
@@ -43,7 +41,7 @@ export class Enemy {
         
         // Load crab sprite
         this.sprite = new Image()
-        this.sprite.src = '/enemies/crab.png'
+        this.sprite.src = '/enemies/nu-crab.png'
     }
 
     private generateRandomRedColor(): string {

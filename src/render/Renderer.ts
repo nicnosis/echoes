@@ -11,6 +11,10 @@ export class Renderer {
     this.ctx = ctx
   }
 
+  get context(): CanvasRenderingContext2D {
+    return this.ctx
+  }
+
   clear() {
     this.ctx.fillStyle = '#222'
     this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height)
