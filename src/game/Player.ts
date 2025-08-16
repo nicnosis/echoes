@@ -240,19 +240,22 @@ export class Player {
         }
 
         // Render body parts with unified breathing animation
-        const amplitude = this.isMoving ? 0.15 : 0.08 // ±15% moving, ±8% static
-        const period = this.isMoving ? 350 : 500 // 350ms moving, 500ms static
+        const amplitude = this.isMoving ? 0.09 : 0.075 // ±9% moving, ±7.5% static
+        const period = this.isMoving ? 550 : 1000 // 550ms moving, 1000ms static
         const timeInRadians = (this.animationTime / period) * 2 * Math.PI
         const sineValue = Math.sin(timeInRadians + this.animationOffset)
         const widthScale = 1 + (sineValue * amplitude)
         const heightScale = 1 - (sineValue * amplitude)
 
-        // Apply breathing transform to entire character
+        // Apply breathing transform to entire character (scale from bottom)
         const ctx = renderer.context
         ctx.save()
-        ctx.translate(this.x, this.y)
+        
+        // Transform origin at bottom center of player for grounded breathing
+        const bottomY = this.y + this.height / 2
+        ctx.translate(this.x, bottomY)
         ctx.scale(widthScale, heightScale)
-        ctx.translate(-this.x, -this.y)
+        ctx.translate(-this.x, -bottomY)
 
         // Render body parts in draw order
         const sortedBodyParts = this.body

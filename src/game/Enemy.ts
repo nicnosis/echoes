@@ -13,13 +13,11 @@ export class Enemy {
     public moveSpeed: number = BASE_MOVE_SPEED * 0.8 // Enemies are slightly slower than player
     public health: number = 3
     public maxHealth: number = 15
-    private color: string
     private dying: boolean = false
     private deathTimer: number = 0
     private deathDuration: number = 400 // 500ms death animation
     private originalWidth: number = 45
     private originalHeight: number = 37.5
-    private originalColor: string
     private sprite: HTMLImageElement
     private previousX: number
     private facingRight: boolean = true
@@ -34,8 +32,6 @@ export class Enemy {
         this.x = x
         this.y = y
         this.previousX = x
-        this.color = this.generateRandomRedColor()
-        this.originalColor = this.color
         this.originalWidth = this.width
         this.originalHeight = this.height
         
@@ -44,16 +40,6 @@ export class Enemy {
         this.sprite.src = '/enemies/nu-crab.png'
     }
 
-    private generateRandomRedColor(): string {
-        const hueVariation = Math.random() * 60 - 30
-        const baseHue = 0 + hueVariation
-        const normalizedHue = ((baseHue % 360) + 360) % 360
-
-        const saturation = 80 + Math.random() * 20
-        const lightness = 40 + Math.random() * 20
-
-        return `hsla(${normalizedHue}, ${saturation}%, ${lightness}%, 0.85)`
-    }
 
     // Update enemy behavior 
     update(deltaTime: number, player: Player): void {
@@ -73,12 +59,7 @@ export class Enemy {
             this.width = this.originalWidth * (1 - progress)
             this.height = this.originalHeight * (1 - progress)
 
-            // Fade to black
-            const colorProgress = Math.min(1, progress)
-            const r = Math.floor(255 - 0 * colorProgress) // Red component to black
-            const g = Math.floor(0 * colorProgress)   // Green stays 0
-            const b = Math.floor(0 * colorProgress)   // Blue stays 0
-            this.color = `rgb(${r},${g},${b})`
+            // Death visual effects will be handled in render method
 
             return // Don't do normal updates while dying
         }
@@ -129,7 +110,25 @@ export class Enemy {
         // Draw crab sprite with scaled dimensions
         const spriteX = this.x - scaledWidth / 2
         const spriteY = this.y - scaledHeight / 2
+        
+        const ctx = renderer.context
+        ctx.save()
+        
+        if (this.dying) {
+            // Apply death effect - darken and fade the sprite silhouette
+            const progress = this.deathTimer / this.deathDuration
+            
+            // Fade out using native canvas transparency
+            const opacity = Math.max(0, 1 - progress * 1.1)
+            ctx.globalAlpha = opacity
+            
+            // Darken to black using CSS filter
+            const brightness = Math.max(0, 1 - progress * 1.2)
+            ctx.filter = `brightness(${brightness})`
+        }
+        
         renderer.drawImage(this.sprite, spriteX, spriteY, scaledWidth, scaledHeight, !this.facingRight)
+        ctx.restore()
 
         // Debug: Draw cyan hitbox outline (using original dimensions)
         if (debug.showBounds) {
