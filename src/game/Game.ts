@@ -212,7 +212,7 @@ export class Game {
         this.renderer.drawBackground()
 
         // Debug grid (drawOrder: 1) - beneath all game objects
-        if (debug.showBounds) {
+        if (debug.display.grid) {
             this.renderer.drawDebugGrid()
         }
 

@@ -146,7 +146,7 @@ export class Enemy {
         ctx.restore()
 
         // Debug: Draw cyan hitbox outline (rendered outside breathing transform)
-        if (debug.showBounds) {
+        if (debug.display.bounds) {
             renderer.drawRect(this.x, this.y, this.width, this.height, 'cyan', { strokeOnly: true, lineWidth: 2 })
         }
     }

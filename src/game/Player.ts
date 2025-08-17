@@ -244,7 +244,7 @@ export class Player {
         this.renderShadow(renderer)
 
         // Debug toggle for breathing animation (to test camera jerk)
-        if (debug.playerBreathe) {
+        if (debug.display.playerBreathe) {
             // Calculate unified breathing animation for entire character assembly
             const amplitude = this.isMoving ? 0.09 : 0.075 // ±9% moving, ±7.5% static
             const period = this.isMoving ? 550 : 1000 // 550ms moving, 1000ms static
@@ -296,7 +296,7 @@ export class Player {
         }
 
         // Debug elements rendered outside breathing transform (so they don't breathe)
-        if (debug.showBounds) {
+        if (debug.display.bounds) {
             this.renderDebugHitbox(renderer)
             this.renderDebugRanges(renderer)
         }
@@ -332,7 +332,7 @@ export class Player {
         }
 
         // Debug: Pink circle for body part position
-        if (debug.showBounds) {
+        if (debug.display.bounds) {
             renderer.drawCircle(worldX, worldY, 4, '#ff69b4', 2, true)
         }
     }
@@ -355,7 +355,7 @@ export class Player {
         }
 
         // Debug: Pink circle for body part position
-        if (debug.showBounds) {
+        if (debug.display.bounds) {
             const worldX = this.x + position.x
             const worldY = this.y + position.y
             renderer.drawCircle(worldX, worldY, 4, '#ff69b4', 2, true)
@@ -395,7 +395,7 @@ export class Player {
         }
 
         // Debug: Pink circle for body part position (also affected by breathing transform)
-        if (debug.showBounds) {
+        if (debug.display.bounds) {
             const worldX = this.x + position.x
             const worldY = this.y + position.y
             const screen = (renderer as any).worldToScreen(worldX, worldY, (renderer as any).cam)

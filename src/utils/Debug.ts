@@ -12,9 +12,12 @@ export class DebugSystem {
     private onRestart: (() => void) | null = null;
     private onEndWave: (() => void) | null = null;
 
-    // Visual debug options
-    public showBounds: boolean = true;
-    public playerBreathe: boolean = true;
+    // Visual debug options - modular structure
+    public display = {
+        bounds: false,      // Show hitboxes, weapon ranges, pickup radius
+        grid: true,        // Show coordinate grid
+        playerBreathe: true // Enable player breathing animation
+    };
 
     constructor() {
         this.setupKeyListeners();
@@ -95,7 +98,7 @@ export class DebugSystem {
         debugPanel.id = 'debug-panel';
         debugPanel.style.cssText = `
             position: absolute;
-            top: 10px;
+            bottom: 10px;
             left: 10px;
             z-index: 1000;
             background: rgba(0, 0, 0, 0.7);
@@ -118,12 +121,12 @@ export class DebugSystem {
         const showBoundsCheckbox = document.createElement('input');
         showBoundsCheckbox.type = 'checkbox';
         showBoundsCheckbox.id = 'showBounds';
-        showBoundsCheckbox.checked = this.showBounds;
+        showBoundsCheckbox.checked = this.display.bounds;
         
         // Update debug state when checkbox changes
         showBoundsCheckbox.addEventListener('change', (e) => {
-            this.showBounds = (e.target as HTMLInputElement).checked;
-            console.log('Debug showBounds:', this.showBounds);
+            this.display.bounds = (e.target as HTMLInputElement).checked;
+            console.log('Debug display.bounds:', this.display.bounds);
         });
 
         const showBoundsText = document.createTextNode('Show Bounds');
@@ -131,6 +134,33 @@ export class DebugSystem {
         showBoundsLabel.appendChild(showBoundsCheckbox);
         showBoundsLabel.appendChild(showBoundsText);
         debugPanel.appendChild(showBoundsLabel);
+
+        // Create showGrid checkbox
+        const showGridLabel = document.createElement('label');
+        showGridLabel.style.cssText = `
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+            margin-top: 4px;
+        `;
+
+        const showGridCheckbox = document.createElement('input');
+        showGridCheckbox.type = 'checkbox';
+        showGridCheckbox.id = 'showGrid';
+        showGridCheckbox.checked = this.display.grid;
+        
+        // Update debug state when checkbox changes
+        showGridCheckbox.addEventListener('change', (e) => {
+            this.display.grid = (e.target as HTMLInputElement).checked;
+            console.log('Debug display.grid:', this.display.grid);
+        });
+
+        const showGridText = document.createTextNode('Show Grid');
+        
+        showGridLabel.appendChild(showGridCheckbox);
+        showGridLabel.appendChild(showGridText);
+        debugPanel.appendChild(showGridLabel);
 
         // Create playerBreathe checkbox
         const playerBreatheLabel = document.createElement('label');
@@ -145,12 +175,12 @@ export class DebugSystem {
         const playerBreatheCheckbox = document.createElement('input');
         playerBreatheCheckbox.type = 'checkbox';
         playerBreatheCheckbox.id = 'playerBreathe';
-        playerBreatheCheckbox.checked = this.playerBreathe;
+        playerBreatheCheckbox.checked = this.display.playerBreathe;
         
         // Update debug state when checkbox changes
         playerBreatheCheckbox.addEventListener('change', (e) => {
-            this.playerBreathe = (e.target as HTMLInputElement).checked;
-            console.log('Debug playerBreathe:', this.playerBreathe);
+            this.display.playerBreathe = (e.target as HTMLInputElement).checked;
+            console.log('Debug display.playerBreathe:', this.display.playerBreathe);
         });
 
         const playerBreatheText = document.createTextNode('Player Breathe');
