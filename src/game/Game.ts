@@ -131,7 +131,7 @@ export class Game {
     }
 
     // =============================================================================
-    // MAIN GAME LOOP
+    // MAIN GAME LOOP + UPDATE
     // =============================================================================
 
     start(): void {
@@ -196,12 +196,20 @@ export class Game {
         }
     }
 
+    // =============================================================================
+    // RENDER
+    // =============================================================================
+
     private render(): void {
         // Clear canvas
         this.renderer.clear()
         
         // Set camera for this frame
         this.renderer.setCamera(this.cam)
+
+
+        // Draw background (drawOrder: 0)
+        this.renderer.drawBackground()
 
         // Debug grid (drawOrder: 1) - beneath all game objects
         if (debug.showBounds) {

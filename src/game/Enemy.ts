@@ -96,6 +96,9 @@ export class Enemy {
     }
 
     render(renderer: Renderer) {
+        // Render shadow first (behind everything)
+        this.renderShadow(renderer)
+        
         // Calculate breathing animation scaling
         const timeInRadians = (this.animationTime / this.animationPeriod) * 2 * Math.PI
         const sineValue = Math.sin(timeInRadians + this.animationOffset)
@@ -145,6 +148,29 @@ export class Enemy {
         // Debug: Draw cyan hitbox outline (rendered outside breathing transform)
         if (debug.showBounds) {
             renderer.drawRect(this.x, this.y, this.width, this.height, 'cyan', { strokeOnly: true, lineWidth: 2 })
+        }
+    }
+
+    // Render subtle elliptical drop shadow beneath enemy's feet
+    private renderShadow(renderer: Renderer): void {
+        // Shadow dimensions - wider than tall for natural look
+        const shadowWidth = this.width * 0.7
+        const shadowHeight = this.height * 0.4
+        
+        // Shadow position - centered horizontally, at enemy's feet level
+        const shadowX = this.x
+        const shadowY = this.y + 10
+        
+        // Subtle shadow with low opacity
+        const shadowColor = 'rgba(0, 0, 0, 0.2)' // Very subtle black shadow
+        
+        // Use renderer's drawEllipse method if available, otherwise fallback to circle
+        if ((renderer as any).drawEllipse) {
+            // Add subtle blur for soft shadow effect (2px blur)
+            (renderer as any).drawEllipse(shadowX, shadowY, shadowWidth / 2, shadowHeight / 2, shadowColor, 0, false, 2)
+        } else {
+            // Fallback to circle if no ellipse method
+            renderer.drawCircle(shadowX, shadowY, shadowWidth / 2, shadowColor)
         }
     }
 

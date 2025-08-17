@@ -240,6 +240,9 @@ export class Player {
     // =============================================================================
     render(renderer: Renderer) {
 
+        // Render shadow first (behind everything)
+        this.renderShadow(renderer)
+
         // Debug toggle for breathing animation (to test camera jerk)
         if (debug.playerBreathe) {
             // Calculate unified breathing animation for entire character assembly
@@ -428,11 +431,34 @@ export class Player {
     // Render damage flash effect
     private renderDamageFlash(renderer: Renderer): void {
         // Calculate flash intensity based on timer
-        const flashIntensity = this.damageFlashTimer / this.invulnerabilityTime
+        const flashIntensity = this.damageFlashTimer / this.invulnerabilityDuration
         const alpha = Math.min(flashIntensity * 0.6, 0.6) // Max 60% opacity
         
         // Render red overlay covering the entire player hitbox
         renderer.drawRect(this.x, this.y, this.width, this.height, `rgba(255, 102, 102, ${alpha})`)
+    }
+
+    // Render subtle elliptical drop shadow beneath player's feet
+    private renderShadow(renderer: Renderer): void {
+        // Shadow dimensions - wider than tall for natural look
+        const shadowWidth = this.width * 0.9  // 90% of player width
+        const shadowHeight = this.height * 0.5 // 50% of player height
+        
+        // Shadow position - centered horizontally, at player's feet level
+        const shadowX = this.x
+        const shadowY = this.y + (this.height / 2) + 5 // Bottom of player hitbox
+        
+        // Subtle shadow with low opacity
+        const shadowColor = 'rgba(0, 0, 0, 0.2)' // Very subtle black shadow
+        
+        // Use renderer's drawEllipse method if available, otherwise fallback to circle
+        if ((renderer as any).drawEllipse) {
+            // Add subtle blur for soft shadow effect (2px blur)
+            (renderer as any).drawEllipse(shadowX, shadowY, shadowWidth / 2, shadowHeight / 2, shadowColor, 0, false, 2)
+        } else {
+            // Fallback to circle if no ellipse method
+            renderer.drawCircle(shadowX, shadowY, shadowWidth / 2, shadowColor)
+        }
     }
 
     // =============================================================================
