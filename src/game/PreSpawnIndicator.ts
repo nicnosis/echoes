@@ -86,16 +86,24 @@ export class PreSpawnIndicator {
         const height = currentSize * Math.sqrt(3) / 2
         const halfSize = currentSize / 2
 
-        const ctx = (renderer as any).ctx
+        // Use camera-aware rendering
+        const ctx = renderer.context
         ctx.save()
+        
+        // Get screen coordinates from camera transform
+        const screen = (renderer as any).worldToScreen(this.x, this.y, (renderer as any).cam)
+        const scaledSize = currentSize * (renderer as any).cam.zoom
+        const scaledHeight = height * (renderer as any).cam.zoom
+        const scaledHalfSize = halfSize * (renderer as any).cam.zoom
+        
         ctx.strokeStyle = `rgba(255, 255, 0, ${opacity})` // Yellow with pulsing opacity
-        ctx.lineWidth = 2
+        ctx.lineWidth = 2 * (renderer as any).cam.zoom
         ctx.beginPath()
 
-        // Draw triangle: vertex at top, flat side at bottom
-        ctx.moveTo(this.x, this.y - height / 2) // Top vertex
-        ctx.lineTo(this.x - halfSize, this.y + height / 2) // Bottom left
-        ctx.lineTo(this.x + halfSize, this.y + height / 2) // Bottom right
+        // Draw triangle: vertex at top, flat side at bottom (using screen coordinates)
+        ctx.moveTo(screen.x, screen.y - scaledHeight / 2) // Top vertex
+        ctx.lineTo(screen.x - scaledHalfSize, screen.y + scaledHeight / 2) // Bottom left
+        ctx.lineTo(screen.x + scaledHalfSize, screen.y + scaledHeight / 2) // Bottom right
         ctx.closePath()
         ctx.stroke()
         ctx.restore()

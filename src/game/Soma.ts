@@ -72,16 +72,29 @@ export class Soma {
         const minSize = 10
         width = Math.max(width, minSize)
         height = Math.max(height, minSize)
-        const ctx = (renderer as any).ctx
+        
+        // Handle rotation and glow effects manually but use world coordinates
+        const ctx = renderer.context
         ctx.save()
         ctx.globalAlpha = this.alpha
-        ctx.translate(this.x, this.y)
-        ctx.rotate(this.rotation)
-        // Add pinkish glow
+        
+        // Add pinkish glow (will be scaled by camera)
         ctx.shadowColor = '#ff66cc'
         ctx.shadowBlur = 24
-        ctx.fillStyle = '#ff33cc' // Vibrant pink
-        ctx.fillRect(-width / 2, -height / 2, width, height)
+        
+        // Get screen coordinates for rotation transform
+        const screen = (renderer as any).worldToScreen(this.x, this.y, (renderer as any).cam)
+        const scaledWidth = width * (renderer as any).cam.zoom
+        const scaledHeight = height * (renderer as any).cam.zoom
+        
+        // Apply rotation at screen coordinates
+        ctx.translate(screen.x, screen.y)
+        ctx.rotate(this.rotation)
+        
+        // Draw rectangle with camera-scaled dimensions
+        ctx.fillStyle = '#ff33cc'
+        ctx.fillRect(-scaledWidth / 2, -scaledHeight / 2, scaledWidth, scaledHeight)
+        
         ctx.restore()
     }
 

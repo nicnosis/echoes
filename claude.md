@@ -706,6 +706,18 @@ spawnManager.addEnemiesToGame(game)
 - bodyparts.csv, stats.csv, etc. define system structure only
 - All gameplay changes happen through the code layer, not data files
 
+**Table of Contents Adherence:**
+- **ALWAYS respect existing table of contents** in TypeScript files when they exist
+- Before adding new methods/sections, check the table of contents structure
+- Place new code in the appropriate existing section that matches its purpose
+- If reorganization is needed, **consult with the user first** before moving sections
+- Table of contents and actual code sections must always match up
+- Examples:
+  - Rendering methods belong in section 3. RENDERING
+  - Combat methods belong in section 4. COMBAT & DAMAGE
+  - Utility methods belong in section 7. UTILITY METHODS
+- Never create arbitrary new sections like "6.5" - use existing sections or ask to reorganize
+
 ---
 
 ## Development Commands

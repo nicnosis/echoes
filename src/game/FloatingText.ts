@@ -29,33 +29,16 @@ export class FloatingText {
     }
 
     render(renderer: Renderer) {
-        const alpha = Math.max(0, 1 - (this.timer / this.duration))
-        const fontSize = 16 + (1 - alpha) * 4
+        // NO ALPHA - just draw solid color text to test if alpha is the issue
+        const fontSize = 18 // Fixed size for testing
+        const displayText = this.text ? this.text : this.damage.toString()
 
-        // Handle alpha for different color formats
-        let colorWithAlpha = this.color
-        if (this.color.startsWith('#')) {
-            // Convert hex to rgba with alpha
-            const hex = this.color.slice(1)
-            const r = parseInt(hex.slice(0, 2), 16)
-            const g = parseInt(hex.slice(2, 4), 16)
-            const b = parseInt(hex.slice(4, 6), 16)
-            colorWithAlpha = `rgba(${r}, ${g}, ${b}, ${alpha})`
-        } else if (this.color.includes('1)') || this.color.includes('0.85)')) {
-            // Handle existing rgba/hsla colors
-            colorWithAlpha = this.color.replace('1)', `${alpha})`).replace('0.85)', `${alpha})`)
-        } else {
-            // Default case - assume it's a named color or rgb
-            colorWithAlpha = this.color
-        }
-
-        const displayText = this.text ? this.text : this.damage.toString();
-
+        // Use pure world coordinates - let renderer handle camera transform
         renderer.drawText(
             displayText,
             this.x,
             this.y,
-            colorWithAlpha,
+            this.color, // No alpha modification
             `${fontSize}px Arial`
         )
     }

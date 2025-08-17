@@ -234,10 +234,6 @@ export class Player {
     // 3. RENDERING
     // =============================================================================
     render(renderer: Renderer) {
-        // Debug: Draw cyan hitbox outline
-        if (debug.showBounds) {
-            renderer.drawRect(this.x - this.width / 2, this.y - this.height / 2, this.width, this.height, '#00ffff', { strokeOnly: true, lineWidth: 2 })
-        }
 
         // Render body parts with unified breathing animation
         const amplitude = this.isMoving ? 0.09 : 0.075 // ±9% moving, ±7.5% static
@@ -247,17 +243,7 @@ export class Player {
         const widthScale = 1 + (sineValue * amplitude)
         const heightScale = 1 - (sineValue * amplitude)
 
-        // Apply breathing transform to entire character (scale from bottom)
-        const ctx = renderer.context
-        ctx.save()
-        
-        // Transform origin at bottom center of player for grounded breathing
-        const bottomY = this.y + this.height / 2
-        ctx.translate(this.x, bottomY)
-        ctx.scale(widthScale, heightScale)
-        ctx.translate(-this.x, -bottomY)
-
-        // Render body parts in draw order
+        // Render body parts in draw order with breathing applied to each part
         const sortedBodyParts = this.body
             .map(bodyPart => ({
                 bodyPart,
@@ -267,17 +253,22 @@ export class Player {
             .sort((a, b) => a.position.drawOrder - b.position.drawOrder)
 
         sortedBodyParts.forEach(({ bodyPart, position }) => {
-            this.renderBodyPart(renderer, bodyPart, position)
+            this.renderBodyPartWithBreathing(renderer, bodyPart, position, widthScale, heightScale)
         })
 
-        ctx.restore()
-
-        // Debug: Render weapon ranges and pickup radius
+        // Debug: Show player hitbox (centered on player world position)
         if (debug.showBounds) {
-            this.weapons.forEach(weapon => {
-                renderer.drawCircle(this.x, this.y, weapon.range, '#ffffff', 1, true)
-            })
-            renderer.drawCircle(this.x, this.y, this.pickupRadius, '#00ff00', 1, true)
+            this.renderDebugHitbox(renderer)
+        }
+
+        // Debug: Show weapon ranges and pickup radius
+        if (debug.showBounds) {
+            this.renderDebugRanges(renderer)
+        }
+
+        // Render damage flash overlay
+        if (this.damageFlashTimer > 0) {
+            this.renderDamageFlash(renderer)
         }
 
         // Render projectiles
@@ -286,7 +277,32 @@ export class Player {
         })
     }
 
-    // Render a single body part
+    // Render a single body part with breathing animation
+    private renderBodyPartWithBreathing(renderer: Renderer, bodyPart: BodyPart, position: any, widthScale: number, heightScale: number): void {
+        const worldX = this.x + position.x
+        const worldY = this.y + position.y
+
+        if (bodyPart.isLoaded()) {
+            const sprite = bodyPart.getSprite()
+            if (sprite) {
+                // Apply breathing scaling to the sprite dimensions
+                const baseWidth = sprite.naturalWidth * bodyPart.scale
+                const baseHeight = sprite.naturalHeight * bodyPart.scale
+                const breathingWidth = baseWidth * widthScale
+                const breathingHeight = baseHeight * heightScale
+                
+                // Use pure world coordinates - let renderer handle camera transform
+                renderer.drawImage(sprite, worldX, worldY, breathingWidth, breathingHeight, !this.facingRight)
+            }
+        }
+
+        // Debug: Pink circle for body part position
+        if (debug.showBounds) {
+            renderer.drawCircle(worldX, worldY, 4, '#ff69b4', 2, true)
+        }
+    }
+
+    // Render a single body part (old method for reference)
     private renderBodyPart(renderer: Renderer, bodyPart: BodyPart, position: any): void {
         const worldX = this.x + position.x
         const worldY = this.y + position.y
@@ -318,6 +334,34 @@ export class Player {
         if (debug.showBounds) {
             renderer.drawCircle(worldX, worldY, 4, '#ff69b4', 2, true)
         }
+    }
+
+    // Render player hitbox - this shows the actual collision boundaries
+    private renderDebugHitbox(renderer: Renderer): void {
+        // Player hitbox is centered on this.x, this.y with dimensions this.width x this.height
+        // Use pure world coordinates - renderer handles camera transform
+        renderer.drawRect(this.x, this.y, this.width, this.height, '#00ffff', { strokeOnly: true, lineWidth: 2 })
+    }
+
+    // Render weapon ranges and pickup radius
+    private renderDebugRanges(renderer: Renderer): void {
+        // Weapon ranges (white circles)
+        this.weapons.forEach(weapon => {
+            renderer.drawCircle(this.x, this.y, weapon.range, '#ffffff', 1, true)
+        })
+        
+        // Pickup radius (green circle)
+        renderer.drawCircle(this.x, this.y, this.pickupRadius, '#00ff00', 1, true)
+    }
+
+    // Render damage flash effect
+    private renderDamageFlash(renderer: Renderer): void {
+        // Calculate flash intensity based on timer
+        const flashIntensity = this.damageFlashTimer / this.invulnerabilityTime
+        const alpha = Math.min(flashIntensity * 0.6, 0.6) // Max 60% opacity
+        
+        // Render red overlay covering the entire player hitbox
+        renderer.drawRect(this.x, this.y, this.width, this.height, `rgba(255, 102, 102, ${alpha})`)
     }
 
     // =============================================================================

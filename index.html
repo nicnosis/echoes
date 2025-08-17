@@ -13,54 +13,13 @@
   <link rel="stylesheet" href="/src/ui/styles/Pause.css">
   <link rel="stylesheet" href="/src/ui/styles/LevelUp.css">
   <link rel="stylesheet" href="/src/ui/styles/Shop.css">
-  <style>
-    /* FIXED NON-RESPONSIVE LAYOUT - NO VIEWPORT CHANGES */
-    body {
-      margin: 0;
-      padding: 0;
-      background: #000;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      min-height: 100vh;
-      font-family: 'Lato', Arial, sans-serif;
-      /* Prevent any responsive behavior */
-      overflow: hidden;
-    }
-    #game-container {
-      position: relative;
-      width: 800px;
-      height: 600px;
-      /* Fixed dimensions - no responsive behavior */
-      flex-shrink: 0;
-      flex-grow: 0;
-    }
-    #game-canvas {
-      border: 1px solid #333;
-      background: #222;
-      width: 800px;
-      height: 600px;
-      /* Fixed canvas size - no responsive scaling */
-      display: block;
-    }
-    #ui-overlay {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 800px;
-      height: 600px;
-      pointer-events: none;
-      z-index: 10;
-      /* Fixed overlay size */
-    }
-  </style>
 </head>
 <body>
   <div id="game-container">
-    <canvas id="game-canvas" width="800" height="600"></canvas>
+    <canvas id="game-canvas" width="1200" height="900"></canvas>
     
     <!-- UI Overlay -->
-    <div id="ui-overlay">
+    <div class="wave-phase-ui-overlay">
       <div id="hud">
         <div class="hud-top-left">
           <div class="health-bar">
@@ -74,6 +33,7 @@
                           <div class="level">Lv 0</div>
                           <div class="gold">Soma: 0</div>
         </div>
+        <div class="hud-wave-timer">Wave 1: 30s</div>
       </div>
       
 

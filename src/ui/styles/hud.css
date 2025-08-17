@@ -81,5 +81,19 @@
     margin-top: 2px;
 }
 
+/* Wave Timer Display */
+.hud-wave-timer {
+    position: absolute;
+    top: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    color: #fff;
+    font-size: 36px;
+    font-weight: bold;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+    z-index: 100;
+    pointer-events: none;
+}
+
 /* NO RESPONSIVE DESIGN - FIXED HUD LAYOUT */
 /* Responsive media queries removed to prevent layout changes when DevTools opens */

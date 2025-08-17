@@ -7,6 +7,7 @@ import { SpawnManager } from './SpawnManager'
 import { UnifiedUI, UIScreen } from '../ui/components/UnifiedUI'
 import { HUD } from '../ui/components/HUD'
 import { FloatingText } from './FloatingText'
+import { debug } from '../utils/Debug'
 
 enum GamePhase {
     WAVE = 'wave',
@@ -45,6 +46,14 @@ export class Game {
 
     // HUD for wave gameplay
     private hud: HUD
+
+    // Camera system
+    private cam = {
+        x: 0,
+        y: 0,
+        zoom: 1.5,
+        targetZoom: 1.5
+    }
 
     // Game loop timing
     private lastTime: number = 0
@@ -147,6 +156,9 @@ export class Game {
     private update(deltaTime: number): void {
         if (this.paused) return
 
+        // Update camera
+        this.updateCamera(deltaTime)
+
         // Phase-based update logic
         switch (this.gamePhase) {
             case GamePhase.WAVE:
@@ -161,9 +173,40 @@ export class Game {
         }
     }
 
+    private updateCamera(deltaTime: number): void {
+        // Camera locked to player position - no smoothing
+        this.cam.x = this.player.x
+        this.cam.y = this.player.y
+    }
+
+    private updateWaveTimerDisplay(): void {
+        if (this.gamePhase === GamePhase.WAVE && this.waveIndex < this.waveData.length) {
+            const timerElement = document.querySelector('.hud-wave-timer') as HTMLElement
+            if (timerElement) {
+                const timerText = `Wave ${this.waveData[this.waveIndex].wave}: ${Math.ceil(this.waveTimer)}s`
+                timerElement.textContent = timerText
+                timerElement.style.display = 'block'
+            }
+        } else {
+            // Hide timer when not in wave phase
+            const timerElement = document.querySelector('.hud-wave-timer') as HTMLElement
+            if (timerElement) {
+                timerElement.style.display = 'none'
+            }
+        }
+    }
+
     private render(): void {
         // Clear canvas
         this.renderer.clear()
+        
+        // Set camera for this frame
+        this.renderer.setCamera(this.cam)
+
+        // Debug grid (drawOrder: 1) - beneath all game objects
+        if (debug.showBounds) {
+            this.renderer.drawDebugGrid()
+        }
 
         // Render game objects in draw order
         // Soma (drawOrder: 50) - on ground, behind everything
@@ -183,20 +226,10 @@ export class Game {
         // Spawn manager indicators (should be high like debug)
         this.spawnManager.render(this.renderer)
 
-        // Render floating texts
+        // Render floating texts (on top)
         this.floatingTexts.forEach(floatingText => floatingText.render(this.renderer))
 
-        // Render wave timer during wave phase
-        if (this.gamePhase === GamePhase.WAVE && this.waveIndex < this.waveData.length) {
-            const timerText = `Wave ${this.waveData[this.waveIndex].wave}: ${Math.ceil(this.waveTimer)}s`
-            this.renderer.drawText(
-                timerText,
-                this.canvas.width / 2 - 80,
-                48,
-                '#fff',
-                'bold 36px Arial'
-            )
-        }
+        // Update wave timer in DOM (handled in updateWaveTimer method)
 
         // UI is handled by HTML/CSS overlays via UnifiedUI
         this.renderer.present()
@@ -209,7 +242,7 @@ export class Game {
     private updateWave(deltaTime: number): void {
         // Update wave timer - deltaTime is already in milliseconds
         this.waveTimer -= deltaTime / 1000
-        this.ui.updateWaveTimer(this.waveTimer)
+        this.updateWaveTimerDisplay()
 
         // Spawn enemies using the spawn manager
         const spawnResult = this.spawnManager.update(deltaTime, this.player, this.enemies)

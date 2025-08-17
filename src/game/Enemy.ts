@@ -103,13 +103,9 @@ export class Enemy {
         const widthScale = 1 + (sineValue * scaleVariation)
         const heightScale = 1 - (sineValue * scaleVariation) // Inverse relationship
         
-        // Calculate scaled dimensions
-        const scaledWidth = this.width * widthScale
-        const scaledHeight = this.height * heightScale
-        
-        // Draw crab sprite with scaled dimensions
-        const spriteX = this.x - scaledWidth / 2
-        const spriteY = this.y - scaledHeight / 2
+        // Calculate breathing-scaled dimensions in world space
+        const breathingWidth = this.width * widthScale
+        const breathingHeight = this.height * heightScale
         
         const ctx = renderer.context
         ctx.save()
@@ -127,14 +123,13 @@ export class Enemy {
             ctx.filter = `brightness(${brightness})`
         }
         
-        renderer.drawImage(this.sprite, spriteX, spriteY, scaledWidth, scaledHeight, !this.facingRight)
+        // Use pure world coordinates - let renderer handle camera transform
+        renderer.drawImage(this.sprite, this.x, this.y, breathingWidth, breathingHeight, !this.facingRight)
         ctx.restore()
 
-        // Debug: Draw cyan hitbox outline (using original dimensions)
+        // Debug: Draw cyan hitbox outline (using original dimensions in world coordinates)
         if (debug.showBounds) {
-            const hitboxX = this.x - this.width / 2
-            const hitboxY = this.y - this.height / 2
-            renderer.drawRect(hitboxX, hitboxY, this.width, this.height, 'cyan', { strokeOnly: true, lineWidth: 2 })
+            renderer.drawRect(this.x, this.y, this.width, this.height, 'cyan', { strokeOnly: true, lineWidth: 2 })
         }
     }
 
