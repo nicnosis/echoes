@@ -235,7 +235,7 @@ export class Player {
     // =============================================================================
     render(renderer: Renderer) {
 
-        // Render body parts with unified breathing animation
+        // Calculate unified breathing animation for entire character assembly
         const amplitude = this.isMoving ? 0.09 : 0.075 // ±9% moving, ±7.5% static
         const period = this.isMoving ? 550 : 1000 // 550ms moving, 1000ms static
         const timeInRadians = (this.animationTime / period) * 2 * Math.PI
@@ -243,7 +243,20 @@ export class Player {
         const widthScale = 1 + (sineValue * amplitude)
         const heightScale = 1 - (sineValue * amplitude)
 
-        // Render body parts in draw order with breathing applied to each part
+        // Apply breathing transform to entire character assembly from bottom-up
+        const ctx = renderer.context
+        ctx.save()
+        
+        // Get screen coordinates for camera-aware transform
+        const screen = (renderer as any).worldToScreen(this.x, this.y, (renderer as any).cam)
+        
+        // Transform origin at bottom center of player for grounded breathing
+        const bottomY = screen.y + (this.height * (renderer as any).cam.zoom) / 2
+        ctx.translate(screen.x, bottomY)
+        ctx.scale(widthScale, heightScale)
+        ctx.translate(-screen.x, -bottomY)
+
+        // Render body parts in draw order (without individual breathing scaling)
         const sortedBodyParts = this.body
             .map(bodyPart => ({
                 bodyPart,
@@ -253,20 +266,18 @@ export class Player {
             .sort((a, b) => a.position.drawOrder - b.position.drawOrder)
 
         sortedBodyParts.forEach(({ bodyPart, position }) => {
-            this.renderBodyPartWithBreathing(renderer, bodyPart, position, widthScale, heightScale)
+            this.renderBodyPart(renderer, bodyPart, position)
         })
 
-        // Debug: Show player hitbox (centered on player world position)
+        ctx.restore()
+
+        // Debug elements rendered outside breathing transform (so they don't breathe)
         if (debug.showBounds) {
             this.renderDebugHitbox(renderer)
-        }
-
-        // Debug: Show weapon ranges and pickup radius
-        if (debug.showBounds) {
             this.renderDebugRanges(renderer)
         }
 
-        // Render damage flash overlay
+        // Damage flash rendered outside breathing transform
         if (this.damageFlashTimer > 0) {
             this.renderDamageFlash(renderer)
         }
@@ -302,37 +313,47 @@ export class Player {
         }
     }
 
-    // Render a single body part (old method for reference)
+    // Render a single body part within the unified breathing transform
     private renderBodyPart(renderer: Renderer, bodyPart: BodyPart, position: any): void {
-        const worldX = this.x + position.x
-        const worldY = this.y + position.y
-
         if (bodyPart.isLoaded()) {
             const sprite = bodyPart.getSprite()
             if (sprite) {
-                const finalWidth = sprite.naturalWidth * bodyPart.scale
-                const finalHeight = sprite.naturalHeight * bodyPart.scale
-                const spriteX = worldX - finalWidth / 2
-                const spriteY = worldY - finalHeight / 2
-
-                // Apply damage flash effect
-                if (this.damageFlashTimer > 0) {
-                    const flashCtx = renderer.context
-                    flashCtx.save()
-                    renderer.drawImage(sprite, spriteX, spriteY, finalWidth, finalHeight, !this.facingRight)
-                    flashCtx.globalCompositeOperation = 'multiply'
-                    flashCtx.fillStyle = '#ff6666'
-                    flashCtx.fillRect(spriteX, spriteY, finalWidth, finalHeight)
-                    flashCtx.restore()
+                // Get screen coordinates using camera transform (breathing transform is already applied)
+                const worldX = this.x + position.x
+                const worldY = this.y + position.y
+                const screen = (renderer as any).worldToScreen(worldX, worldY, (renderer as any).cam)
+                
+                const finalWidth = sprite.naturalWidth * bodyPart.scale * (renderer as any).cam.zoom
+                const finalHeight = sprite.naturalHeight * bodyPart.scale * (renderer as any).cam.zoom
+                
+                // Draw sprite at screen coordinates (breathing transform already applied by parent context)
+                const ctx = renderer.context
+                ctx.save()
+                
+                if (this.facingRight) {
+                    ctx.drawImage(sprite, screen.x - finalWidth/2, screen.y - finalHeight/2, finalWidth, finalHeight)
                 } else {
-                    renderer.drawImage(sprite, spriteX, spriteY, finalWidth, finalHeight, !this.facingRight)
+                    ctx.scale(-1, 1)
+                    ctx.drawImage(sprite, -screen.x - finalWidth/2, screen.y - finalHeight/2, finalWidth, finalHeight)
                 }
+                
+                ctx.restore()
             }
         }
 
-        // Debug: Pink circle for body part position
+        // Debug: Pink circle for body part position (also affected by breathing transform)
         if (debug.showBounds) {
-            renderer.drawCircle(worldX, worldY, 4, '#ff69b4', 2, true)
+            const worldX = this.x + position.x
+            const worldY = this.y + position.y
+            const screen = (renderer as any).worldToScreen(worldX, worldY, (renderer as any).cam)
+            const ctx = renderer.context
+            
+            ctx.save()
+            ctx.fillStyle = '#ff69b4'
+            ctx.beginPath()
+            ctx.arc(screen.x, screen.y, 4 * (renderer as any).cam.zoom, 0, Math.PI * 2)
+            ctx.fill()
+            ctx.restore()
         }
     }
 
