@@ -241,6 +241,53 @@ private updateGear(bodyParts: BodyPart[]): void {
 - **Default Head**: Frog head (100% scale, no stat bonuses)
 - More body parts defined in `/data/bodyparts.csv`
 
+## Camera & Coordinate Systems
+
+### Camera Architecture
+
+**Design Philosophy:**
+- **World Coordinates**: Game logic operates in consistent world space
+- **Camera Transform**: Single transformation point in renderer
+- **No Manual Scaling**: Entities never calculate screen coordinates directly
+
+**Camera Configuration:**
+- **1.5x Zoom**: Enhances visual personality without performance impact
+- **Lockstep Following**: Camera.x/y = player.x/y (no smoothing lag)
+- **Canvas Size**: 1200x900 for more visual real estate
+
+**Rendering Flow:**
+```
+Game Objects (world coords) → Camera Transform → Screen Coordinates → Canvas Drawing
+```
+
+### Coordinate Transformation Rules
+
+**Entity Rendering Pattern:**
+```typescript
+// ✅ CORRECT: Let renderer handle camera transform
+renderer.drawImage(sprite, this.x, this.y, width, height, flip)
+
+// ❌ WRONG: Manual coordinate calculation
+const screenX = (this.x - camera.x) * camera.zoom + canvas.width/2
+```
+
+**Mixed Rendering (Special Cases):**
+- **Soma**: Uses manual screen transforms for rotation effects
+- **PreSpawnIndicator**: Uses camera-aware screen coordinates for triangle drawing
+- **FloatingText**: Pure world coordinates, camera handles positioning
+
+### Canvas & Viewport Management
+
+**Fixed Layout Strategy:**
+- **Non-Responsive**: Prevents DevTools layout shifts and maintains consistent experience
+- **CSS Variables**: `--canvas-width: 1200px`, `--canvas-height: 900px`
+- **Centered Layout**: Game container centered in viewport with fixed dimensions
+
+**HTML/CSS UI Overlay:**
+- **Wave Timer**: HTML positioned at top-center, outside canvas rendering
+- **HUD Elements**: HTML overlays for health, XP, stats (not canvas-rendered)
+- **Menu Screens**: HTML-based pause, level up, shop interfaces
+
 ## UI Systems
 
 ### Unified UI Architecture
@@ -303,48 +350,112 @@ this.ui.updateStats(this.player)
 - Current: Basic "Go Wave" button to start next wave
 - Will integrate transformation preview and compatibility checking
 
-## Visual Systems
+## Visual Systems & Rendering Architecture
+
+### Camera System
+
+**Camera-Driven Rendering Pipeline:**
+```typescript
+// Camera object with 1.5x zoom for enhanced visual personality
+private cam = {
+  x: 0,        // World coordinates - follows player
+  y: 0,        // World coordinates - follows player  
+  zoom: 1.5,   // 1.5x zoom for more visual personality
+  targetZoom: 1.5
+}
+```
+
+**Core Coordinate System:**
+- **World Coordinates**: All game entities use pure world coordinates (player.x, enemy.x, etc.)
+- **Camera Transform**: Renderer automatically transforms world → screen coordinates
+- **Screen Coordinates**: Final pixel positions on 1200x900 canvas
+- **Lockstep Following**: Camera follows player with no lag for responsive feel
+
+**Coordinate Transformation:**
+```typescript
+// Renderer.worldToScreen() - core transformation method
+worldToScreen(worldX: number, worldY: number, camera: any): {x: number, y: number} {
+  return {
+    x: (worldX - camera.x) * camera.zoom + this.canvas.width / 2,
+    y: (worldY - camera.y) * camera.zoom + this.canvas.height / 2
+  }
+}
+```
 
 ### Animation Framework
 
-**Sine Wave Breathing Effects:**
+**Unified Character Breathing System:**
 ```typescript
-// Universal animation pattern
-const sineValue = Math.sin(this.animationTime + this.animationOffset)
-const widthScale = 1 + (sineValue * amplitude)
-const heightScale = 1 - (sineValue * amplitude)
+// Player breathes as single assembly from bottom-up (grounded breathing)
+const screen = renderer.worldToScreen(this.x, this.y, camera)
+const bottomY = screen.y + (this.height * camera.zoom) / 2
+
+ctx.translate(screen.x, bottomY)
+ctx.scale(widthScale, heightScale)  // Apply breathing transform
+ctx.translate(-screen.x, -bottomY)
+
+// All body parts rendered within this transform
 ```
 
 **Animation Parameters by Entity:**
-- **Player**: Unified character assembly breathing using Canvas transforms, different amplitude/period for moving vs static
-- **Enemies**: Individual breathing, always active
-- **Unique Offsets**: Prevent synchronized movement across entities
-
-**Player Character Assembly:**
-- Canvas save/restore transforms applied to entire character
-- All body parts breathe together from character center
-- Movement state affects breathing intensity and speed
+- **Player**: Unified assembly breathing from feet up, amplitude varies with movement
+- **Enemies**: Grounded breathing from feet up, always active, ±12% scale variation
+- **Breathing Isolation**: Debug elements, hitboxes, and UI render outside breathing transforms
 
 ### Rendering Pipeline
 
-**Draw Order Hierarchy:**
-1. **Soma** (drawOrder: 50) - on ground, behind everything
-2. **Enemies** (drawOrder: 100) - characters
-3. **Player** (drawOrder: 205-220) - player character layers
-4. **Projectiles** (drawOrder: 300) - flying above characters
-5. **UI Elements** (drawOrder: 400+) - spawn indicators, floating text
+**Canvas Setup:**
+- **Resolution**: 1200x900 canvas (upgraded from 800x600)
+- **Zoom Level**: 1.5x for enhanced visual personality and detail
+- **Coordinate System**: Pure world coordinates with camera transformation
 
-**Canvas Management:**
-- Single canvas element with 2D rendering context
-- Viewport management for different screen sizes
-- Clear → Render → Present cycle each frame
-
-**Sprite Scaling Implementation:**
+**Render Method Architecture:**
 ```typescript
-// Scale sprites using their native dimensions
-const scaledWidth = sprite.naturalWidth * part.scale
-const scaledHeight = sprite.naturalHeight * part.scale
-renderer.drawImage(sprite, x - scaledWidth/2, y - scaledHeight/2, scaledWidth, scaledHeight)
+private render(): void {
+  this.renderer.clear()
+  this.renderer.setCamera(this.cam)  // Set camera for frame
+  
+  // Draw order: Debug grid → Soma → Enemies → Player → Projectiles → UI
+  if (debug.showBounds) this.renderer.drawDebugGrid()
+  // ... render game objects using world coordinates
+}
+```
+
+**Draw Order Hierarchy:**
+1. **Debug Grid** (drawOrder: 1) - coordinate visualization, renders beneath all
+2. **Soma** (drawOrder: 50) - pickup items on ground
+3. **Enemies** (drawOrder: 100) - enemy characters  
+4. **Player** (drawOrder: 205-220) - player character assembly
+5. **Projectiles** (drawOrder: 300) - flying objects above characters
+6. **UI Elements** (drawOrder: 400+) - spawn indicators, floating text
+
+**Camera-Aware Rendering:**
+- All `renderer.drawRect()`, `drawCircle()`, `drawImage()` methods automatically apply camera transform
+- Entities pass world coordinates, renderer handles screen positioning and scaling
+- Manual screen coordinate calculation eliminated from entity classes
+
+### Debug Visualization System
+
+**Debug Grid:**
+- Visualizes world coordinate system with 100-unit grid squares
+- Red boundary shows 1200x900 game world limits
+- Grid labels show coordinate positions for debugging
+- Renders beneath all game objects for reference
+
+**Bounds Display:**
+- **Cyan**: Entity collision boundaries (hitboxes)
+- **Pink**: Body part attachment points and positions
+- **Green**: Pickup and interaction radius circles
+- **Yellow**: Spawn indicators and timing displays
+
+**Coordinate System Debugging:**
+```typescript
+// Debug grid helps visualize camera transforms
+drawDebugGrid() {
+  // Grid lines every 100 world units
+  // Labels show world coordinates
+  // Red boundary marks game world edges (0,0 to 1200,900)
+}
 ```
 
 ### Floating Text System
@@ -418,6 +529,26 @@ id,displayName,type,imgFileName,scale,maxHP,hpRegen,moveSpeed,attack,armor,critC
 - **Why**: Prevents state leakage, ensures consistent starting conditions
 - **Implementation**: Single `cleanup()` method resets everything at wave end
 - **Benefits**: Easier debugging, no weird cross-wave interactions
+
+**Camera System Architecture:**
+- **Why**: Clean separation between game logic and rendering, consistent 1.5x zoom for personality
+- **Alternative Rejected**: Manual worldScale multiplication throughout codebase
+- **Benefits**: Pure world coordinates, single transform point, easy zoom control
+
+**Bottom-Up Player Breathing:**
+- **Why**: Natural grounded character animation, feet stay planted
+- **Implementation**: Canvas transform origin at player bottom, unified assembly breathing
+- **Player Experience**: Character feels grounded and alive, not floating
+
+**Pure World Coordinates:**
+- **Why**: Eliminates coordinate transformation bugs, clean entity code
+- **Alternative Rejected**: Mixed coordinate systems per entity
+- **Benefits**: Consistent rendering, easier debugging, camera system flexibility
+
+**Game Loop Update Order:**
+- **Why**: Camera must update AFTER player position changes to prevent 1-frame lag jerk
+- **Critical Order**: Player updates → Camera updates (not camera first)
+- **Problem Avoided**: Visual "jerk" effect when starting/stopping movement due to camera lag
 
 ## Debug & Development Tools
 
@@ -730,13 +861,15 @@ spawnManager.addEnemiesToGame(game)
 
 **Working Systems:**
 - ✅ Core game loop with three phases
-- ✅ Player movement and animation
-- ✅ Enemy spawning and AI
-- ✅ Combat system with projectiles
-- ✅ Three-layer stats system
-- ✅ Body parts CSV integration
-- ✅ Wave progression and cleanup
-- ✅ Debug UI system
+- ✅ Camera system with 1.5x zoom and coordinate transformation
+- ✅ Player unified breathing animation (bottom-up grounded)
+- ✅ Enemy spawning and AI with pre-spawn indicators
+- ✅ Combat system with projectiles and critical hits
+- ✅ Three-layer stats system with CSV integration
+- ✅ Body parts system with visual scaling and stat bonuses
+- ✅ Wave progression with comprehensive cleanup
+- ✅ Debug visualization with bounds and coordinate grid
+- ✅ HTML/CSS UI overlay system with wave timer
 
 **Next Priorities:**
 1. Expand body part selection in shop phase

@@ -103,12 +103,18 @@ export class Enemy {
         const widthScale = 1 + (sineValue * scaleVariation)
         const heightScale = 1 - (sineValue * scaleVariation) // Inverse relationship
         
-        // Calculate breathing-scaled dimensions in world space
-        const breathingWidth = this.width * widthScale
-        const breathingHeight = this.height * heightScale
-        
+        // Apply grounded breathing transform (same as player)
         const ctx = renderer.context
         ctx.save()
+        
+        // Get screen coordinates for camera-aware transform
+        const screen = (renderer as any).worldToScreen(this.x, this.y, (renderer as any).cam)
+        
+        // Transform origin at bottom center of enemy for grounded breathing
+        const bottomY = screen.y + (this.height * (renderer as any).cam.zoom) / 2
+        ctx.translate(screen.x, bottomY)
+        ctx.scale(widthScale, heightScale)
+        ctx.translate(-screen.x, -bottomY)
         
         if (this.dying) {
             // Apply death effect - darken and fade the sprite silhouette
@@ -123,11 +129,20 @@ export class Enemy {
             ctx.filter = `brightness(${brightness})`
         }
         
-        // Use pure world coordinates - let renderer handle camera transform
-        renderer.drawImage(this.sprite, this.x, this.y, breathingWidth, breathingHeight, !this.facingRight)
+        // Draw sprite at screen coordinates with proper enemy dimensions (breathing transform already applied)
+        const finalWidth = this.width * (renderer as any).cam.zoom
+        const finalHeight = this.height * (renderer as any).cam.zoom
+        
+        if (this.facingRight) {
+            ctx.drawImage(this.sprite, screen.x - finalWidth/2, screen.y - finalHeight/2, finalWidth, finalHeight)
+        } else {
+            ctx.scale(-1, 1)
+            ctx.drawImage(this.sprite, -screen.x - finalWidth/2, screen.y - finalHeight/2, finalWidth, finalHeight)
+        }
+        
         ctx.restore()
 
-        // Debug: Draw cyan hitbox outline (using original dimensions in world coordinates)
+        // Debug: Draw cyan hitbox outline (rendered outside breathing transform)
         if (debug.showBounds) {
             renderer.drawRect(this.x, this.y, this.width, this.height, 'cyan', { strokeOnly: true, lineWidth: 2 })
         }

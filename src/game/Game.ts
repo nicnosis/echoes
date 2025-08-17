@@ -156,10 +156,7 @@ export class Game {
     private update(deltaTime: number): void {
         if (this.paused) return
 
-        // Update camera
-        this.updateCamera(deltaTime)
-
-        // Phase-based update logic
+        // Phase-based update logic FIRST (so player position gets updated)
         switch (this.gamePhase) {
             case GamePhase.WAVE:
                 this.updateWave(deltaTime)
@@ -171,6 +168,9 @@ export class Game {
                 this.updateShop(deltaTime)
                 break
         }
+
+        // Update camera AFTER player position is updated (fixes 1-frame lag jerk)
+        this.updateCamera(deltaTime)
     }
 
     private updateCamera(deltaTime: number): void {

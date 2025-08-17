@@ -14,6 +14,7 @@ export class DebugSystem {
 
     // Visual debug options
     public showBounds: boolean = true;
+    public playerBreathe: boolean = true;
 
     constructor() {
         this.setupKeyListeners();
@@ -130,6 +131,33 @@ export class DebugSystem {
         showBoundsLabel.appendChild(showBoundsCheckbox);
         showBoundsLabel.appendChild(showBoundsText);
         debugPanel.appendChild(showBoundsLabel);
+
+        // Create playerBreathe checkbox
+        const playerBreatheLabel = document.createElement('label');
+        playerBreatheLabel.style.cssText = `
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+            margin-top: 4px;
+        `;
+
+        const playerBreatheCheckbox = document.createElement('input');
+        playerBreatheCheckbox.type = 'checkbox';
+        playerBreatheCheckbox.id = 'playerBreathe';
+        playerBreatheCheckbox.checked = this.playerBreathe;
+        
+        // Update debug state when checkbox changes
+        playerBreatheCheckbox.addEventListener('change', (e) => {
+            this.playerBreathe = (e.target as HTMLInputElement).checked;
+            console.log('Debug playerBreathe:', this.playerBreathe);
+        });
+
+        const playerBreatheText = document.createTextNode('Player Breathe');
+        
+        playerBreatheLabel.appendChild(playerBreatheCheckbox);
+        playerBreatheLabel.appendChild(playerBreatheText);
+        debugPanel.appendChild(playerBreatheLabel);
 
         // Add to body when DOM is ready
         if (document.body) {
