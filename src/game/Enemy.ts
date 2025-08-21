@@ -16,6 +16,9 @@ export class Enemy {
     private dying: boolean = false
     private deathTimer: number = 0
     private deathDuration: number = 400 // 500ms death animation
+    private spawning: boolean = true
+    private spawnTimer: number = 0
+    private spawnDuration: number = 350 // 350ms spawn fade-in animation
     private originalWidth: number = 45
     private originalHeight: number = 37.5
     private sprite: HTMLImageElement
@@ -44,6 +47,14 @@ export class Enemy {
     // Update enemy behavior 
     update(deltaTime: number, player: Player): void {
         const dt = deltaTime / 1000
+
+        // Update spawn animation
+        if (this.spawning) {
+            this.spawnTimer += deltaTime
+            if (this.spawnTimer >= this.spawnDuration) {
+                this.spawning = false
+            }
+        }
 
         // Update animation time for breathing effect
         if (!this.dying) {
@@ -119,7 +130,12 @@ export class Enemy {
         ctx.scale(widthScale, heightScale)
         ctx.translate(-screen.x, -bottomY)
         
-        if (this.dying) {
+        if (this.spawning) {
+            // Apply spawn fade-in effect
+            const progress = this.spawnTimer / this.spawnDuration
+            const opacity = Math.min(1, progress)
+            ctx.globalAlpha = opacity
+        } else if (this.dying) {
             // Apply death effect - darken and fade the sprite silhouette
             const progress = this.deathTimer / this.deathDuration
             

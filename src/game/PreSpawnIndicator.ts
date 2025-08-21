@@ -4,6 +4,7 @@ import { Player } from './Player'
 export class PreSpawnIndicator {
     private static readonly SPAWN_DURATION = 1500 // 1500ms countdown
     private static readonly PULSE_SPEED = 0.008 // Fast sine wave speed (higher = faster)
+    private static readonly FADE_DURATION = 350 // 350ms fade in/out duration
 
     public x: number
     public y: number
@@ -11,6 +12,10 @@ export class PreSpawnIndicator {
     public pulseTimer: number = 0
     public isActive: boolean = true
     public size: number = 24 // Same as enemy side length (radius * 2)
+    
+    // Fade animation state
+    private fadeState: 'fading-in' | 'active' | 'fading-out' = 'fading-in'
+    private fadeTimer: number = 0
 
     constructor(x: number, y: number) {
         this.x = x
@@ -18,16 +23,36 @@ export class PreSpawnIndicator {
         this.timer = PreSpawnIndicator.SPAWN_DURATION
         this.pulseTimer = 0
         this.isActive = true
+        this.fadeState = 'fading-in'
+        this.fadeTimer = 0
     }
 
     update(deltaTime: number, player: Player): { shouldSpawn: boolean, blocked: boolean, x: number, y: number } {
         if (!this.isActive) return { shouldSpawn: false, blocked: false, x: this.x, y: this.y }
 
-        this.timer -= deltaTime
-        this.pulseTimer += deltaTime
+        // Update fade animation
+        if (this.fadeState === 'fading-in') {
+            this.fadeTimer += deltaTime
+            if (this.fadeTimer >= PreSpawnIndicator.FADE_DURATION) {
+                this.fadeState = 'active'
+                this.fadeTimer = PreSpawnIndicator.FADE_DURATION
+            }
+        } else if (this.fadeState === 'fading-out') {
+            this.fadeTimer -= deltaTime
+            if (this.fadeTimer <= 0) {
+                this.isActive = false
+                return { shouldSpawn: false, blocked: false, x: this.x, y: this.y }
+            }
+        }
+
+        // Only count down timer when fully active
+        if (this.fadeState === 'active') {
+            this.timer -= deltaTime
+            this.pulseTimer += deltaTime
+        }
 
         // Check if timer expired
-        if (this.timer <= 0) {
+        if (this.timer <= 0 && this.fadeState === 'active') {
             // Check collision with player
             const dx = this.x - player.x
             const dy = this.y - player.y
@@ -41,10 +66,16 @@ export class PreSpawnIndicator {
                 this.resetAndMove(player)
                 return { shouldSpawn: false, blocked: true, x: oldX, y: oldY }
             } else {
-                // No collision, spawn enemy
-                this.isActive = false
-                return { shouldSpawn: true, blocked: false, x: this.x, y: this.y }
+                // No collision, start fade out before spawning
+                this.fadeState = 'fading-out'
+                return { shouldSpawn: false, blocked: false, x: this.x, y: this.y }
             }
+        }
+
+        // Check if fade out is complete and we should spawn
+        if (this.fadeState === 'fading-out' && this.fadeTimer <= 0) {
+            this.isActive = false
+            return { shouldSpawn: true, blocked: false, x: this.x, y: this.y }
         }
 
         return { shouldSpawn: false, blocked: false, x: this.x, y: this.y }
@@ -53,6 +84,8 @@ export class PreSpawnIndicator {
     private resetAndMove(player: Player) {
         this.timer = PreSpawnIndicator.SPAWN_DURATION
         this.pulseTimer = 0
+        this.fadeState = 'fading-in'
+        this.fadeTimer = 0
 
         // Move to new random location
         const newLocation = this.generateRandomLocation(player)
@@ -71,18 +104,30 @@ export class PreSpawnIndicator {
     render(renderer: Renderer) {
         if (!this.isActive) return
 
-        // Sine wave pulse effect
+        // Calculate fade progress for opacity and scale
+        let fadeProgress = 1
+        if (this.fadeState === 'fading-in') {
+            fadeProgress = Math.min(1, this.fadeTimer / PreSpawnIndicator.FADE_DURATION)
+        } else if (this.fadeState === 'fading-out') {
+            fadeProgress = Math.max(0, this.fadeTimer / PreSpawnIndicator.FADE_DURATION)
+        }
+
+        // Sine wave pulse effect (only when active)
         const sineValue = Math.sin(this.pulseTimer * PreSpawnIndicator.PULSE_SPEED)
         const normalizedSine = (sineValue + 1) / 2 // Convert from [-1,1] to [0,1]
         
         // Pulse size: 75% to 100% (0.75 to 1.0) - more dramatic
-        const sizeMultiplier = 0.80 + (normalizedSine * 0.20)
+        const baseSizeMultiplier = 0.80 + (normalizedSine * 0.20)
+        // Apply fade scale effect
+        const sizeMultiplier = baseSizeMultiplier * fadeProgress
         const currentSize = this.size * sizeMultiplier
         
         // Pulse opacity: 50% to 100% (0.5 to 1.0) - more dramatic
-        const opacity = 0.5 + (normalizedSine * 0.5)
+        const baseOpacity = 0.5 + (normalizedSine * 0.5)
+        // Apply fade opacity effect
+        const opacity = baseOpacity * fadeProgress
 
-        // Draw equilateral triangle outline with pulsing size
+        // Draw equilateral triangle outline with pulsing size and fade effects
         const height = currentSize * Math.sqrt(3) / 2
         const halfSize = currentSize / 2
 
@@ -96,7 +141,7 @@ export class PreSpawnIndicator {
         const scaledHeight = height * (renderer as any).cam.zoom
         const scaledHalfSize = halfSize * (renderer as any).cam.zoom
         
-        ctx.strokeStyle = `rgba(255, 255, 0, ${opacity})` // Yellow with pulsing opacity
+        ctx.strokeStyle = `rgba(255, 255, 0, ${opacity})` // Yellow with pulsing and fade opacity
         ctx.lineWidth = 2 * (renderer as any).cam.zoom
         ctx.beginPath()
 
