@@ -36,8 +36,8 @@ export class Player {
     public invulnerabilityDuration: number = 500
 
     // Visual effects
-    public damageFlashTimer: number = 0
-    public damageFlashDuration: number = 500
+    public hitFlashTimer: number = 0
+    public hitFlashDuration: number = 200
 
     // Weapons and projectiles
     public weapons: Weapon[] = []
@@ -129,8 +129,8 @@ export class Player {
             }
         }
 
-        if (this.damageFlashTimer > 0) {
-            this.damageFlashTimer -= deltaTime
+        if (this.hitFlashTimer > 0) {
+            this.hitFlashTimer -= deltaTime
         }
 
         // Movement
@@ -301,10 +301,9 @@ export class Player {
             this.renderDebugRanges(renderer)
         }
 
-        // Damage flash rendered outside breathing transform
-        if (this.damageFlashTimer > 0) {
-            this.renderDamageFlash(renderer)
-        }
+
+        // Render mini HP bar above head
+        this.renderMiniHPBar(renderer)
 
         // Render projectiles
         this.projectiles.forEach(projectile => {
@@ -345,12 +344,21 @@ export class Player {
                 const worldX = this.x + position.x
                 const worldY = this.y + position.y
                 
+                // Apply hit flash effect
+                const ctx = renderer.context
+                ctx.save()
+                if (this.hitFlashTimer > 0) {
+                    ctx.filter = 'brightness(2) saturate(0)'
+                }
+                
                 // Use renderer's camera-aware drawImage (no breathing transforms)
                 const finalWidth = sprite.naturalWidth * bodyPart.scale
                 const finalHeight = sprite.naturalHeight * bodyPart.scale
                 
                 
                 renderer.drawImage(sprite, worldX, worldY, finalWidth, finalHeight, !this.facingRight)
+                
+                ctx.restore()
             }
         }
 
@@ -378,6 +386,11 @@ export class Player {
                 // Draw sprite at screen coordinates (breathing transform already applied by parent context)
                 const ctx = renderer.context
                 ctx.save()
+                
+                // Apply hit flash effect - white tint
+                if (this.hitFlashTimer > 0) {
+                    ctx.filter = 'brightness(2) saturate(0)'
+                }
                 
                 const drawX = this.facingRight ? screen.x - finalWidth/2 : -screen.x - finalWidth/2
                 const drawY = screen.y - finalHeight/2
@@ -428,14 +441,9 @@ export class Player {
         renderer.drawCircle(this.x, this.y, this.pickupRadius, '#00ff00', 1, true)
     }
 
-    // Render damage flash effect
-    private renderDamageFlash(renderer: Renderer): void {
-        // Calculate flash intensity based on timer
-        const flashIntensity = this.damageFlashTimer / this.invulnerabilityDuration
-        const alpha = Math.min(flashIntensity * 0.6, 0.6) // Max 60% opacity
-        
-        // Render red overlay covering the entire player hitbox
-        renderer.drawRect(this.x, this.y, this.width, this.height, `rgba(255, 102, 102, ${alpha})`)
+    // Get flash color for hit effect
+    private getFlashColor(normalColor: string, flashColor: string = '#ffffff'): string {
+        return this.hitFlashTimer > 0 ? flashColor : normalColor
     }
 
     // Render subtle elliptical drop shadow beneath player's feet
@@ -459,6 +467,46 @@ export class Player {
             // Fallback to circle if no ellipse method
             renderer.drawCircle(shadowX, shadowY, shadowWidth / 2, shadowColor)
         }
+    }
+
+    // Render mini HP bar above player's head
+    private renderMiniHPBar(renderer: Renderer): void {
+        // Find head body part to get its dimensions
+        const headPart = this.getBodyPart('head')
+        if (!headPart || !headPart.isLoaded()) return
+
+        const sprite = headPart.getSprite()
+        if (!sprite) return
+
+        // Calculate head dimensions and position
+        const headPosition = BODY_POSITIONS.head
+        const headWorldX = this.x + headPosition.x
+        const headWorldY = this.y + headPosition.y
+        const headHeight = sprite.naturalHeight * headPart.scale
+
+        // Position HP bar 5 world pixels above the top of the head
+        const barWorldX = headWorldX
+        const barWorldY = headWorldY - (headHeight / 2) - 5
+        const barWidth = 30
+        const barHeight = 5
+
+        // Calculate HP percentage
+        const currentHP = this.stats.getCurrentHP()
+        const maxHP = this.stats.getMaxHP()
+        const hpPercent = Math.max(0, currentHP / maxHP)
+
+        // Draw HP bar background - anchored to left
+        const leftX = barWorldX - barWidth / 2
+        renderer.drawRect(leftX + barWidth / 2, barWorldY, barWidth, barHeight, this.getFlashColor('#333333'))
+
+        // Draw HP bar fill - anchored to left, shrinks from right
+        const fillWidth = barWidth * hpPercent
+        if (fillWidth > 0) {
+            renderer.drawRect(leftX + fillWidth / 2, barWorldY, fillWidth, barHeight, this.getFlashColor('#228B22'))
+        }
+
+        // Draw HP bar border - anchored to left
+        renderer.drawRect(leftX + barWidth / 2, barWorldY, barWidth, barHeight, this.getFlashColor('#555555'), { strokeOnly: true, lineWidth: 1 })
     }
 
     // =============================================================================
@@ -493,8 +541,8 @@ export class Player {
         this.isInvulnerable = true
         this.invulnerabilityTimer = this.invulnerabilityDuration
 
-        // Set damage flash
-        this.damageFlashTimer = this.damageFlashDuration
+        // Set hit flash
+        this.hitFlashTimer = this.hitFlashDuration
 
         // Record damage event ONLY when damage is actually taken
         this.damageEvents.push({

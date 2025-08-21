@@ -36,6 +36,17 @@ export class HUD {
     const healthPercent = Math.max(0, (currentHP / maxHP) * 100)
     this.healthFill.style.width = `${healthPercent}%`
     this.healthText.textContent = `${Math.floor(currentHP)}/${maxHP}`
+    
+    // Apply hit flash effect to HUD HP bar
+    if (player.hitFlashTimer > 0) {
+      this.healthFill.style.background = '#ffffff'
+      this.healthBar.style.background = '#ffffff'
+      this.healthBar.style.borderColor = '#ffffff'
+    } else {
+      this.healthFill.style.background = '#228B22'
+      this.healthBar.style.background = '#333'
+      this.healthBar.style.borderColor = '#555'
+    }
 
     // Update XP bar
     const xpPercent = player.getXPPercentage()

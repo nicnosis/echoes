@@ -19,6 +19,8 @@ export class Enemy {
     private spawning: boolean = true
     private spawnTimer: number = 0
     private spawnDuration: number = 350 // 350ms spawn fade-in animation
+    private hitFlashTimer: number = 0
+    private hitFlashDuration: number = 200 // 200ms hit flash
     private originalWidth: number = 45
     private originalHeight: number = 37.5
     private sprite: HTMLImageElement
@@ -54,6 +56,11 @@ export class Enemy {
             if (this.spawnTimer >= this.spawnDuration) {
                 this.spawning = false
             }
+        }
+
+        // Update hit flash timer
+        if (this.hitFlashTimer > 0) {
+            this.hitFlashTimer -= deltaTime
         }
 
         // Update animation time for breathing effect
@@ -130,6 +137,11 @@ export class Enemy {
         ctx.scale(widthScale, heightScale)
         ctx.translate(-screen.x, -bottomY)
         
+        // Apply hit flash effect
+        if (this.hitFlashTimer > 0) {
+            ctx.filter = 'brightness(2) saturate(0)'
+        }
+
         if (this.spawning) {
             // Apply spawn fade-in effect
             const progress = this.spawnTimer / this.spawnDuration
@@ -143,9 +155,13 @@ export class Enemy {
             const opacity = Math.max(0, 1 - progress * 1.1)
             ctx.globalAlpha = opacity
             
-            // Darken to black using CSS filter
+            // Darken to black using CSS filter (combine with hit flash if active)
             const brightness = Math.max(0, 1 - progress * 1.2)
-            ctx.filter = `brightness(${brightness})`
+            if (this.hitFlashTimer > 0) {
+                ctx.filter = `brightness(2) saturate(0)`
+            } else {
+                ctx.filter = `brightness(${brightness})`
+            }
         }
         
         // Draw sprite at screen coordinates with proper enemy dimensions (breathing transform already applied)
@@ -201,6 +217,9 @@ export class Enemy {
 
     takeDamage(damage: number): boolean {
         if (this.dying) return false // Already dying
+
+        // Trigger hit flash effect
+        this.hitFlashTimer = this.hitFlashDuration
 
         this.health -= damage
         if (this.health <= 0) {

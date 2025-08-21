@@ -41,7 +41,7 @@ export class PreSpawnIndicator {
             this.fadeTimer -= deltaTime
             if (this.fadeTimer <= 0) {
                 this.isActive = false
-                return { shouldSpawn: false, blocked: false, x: this.x, y: this.y }
+                return { shouldSpawn: true, blocked: false, x: this.x, y: this.y }
             }
         }
 
@@ -70,12 +70,6 @@ export class PreSpawnIndicator {
                 this.fadeState = 'fading-out'
                 return { shouldSpawn: false, blocked: false, x: this.x, y: this.y }
             }
-        }
-
-        // Check if fade out is complete and we should spawn
-        if (this.fadeState === 'fading-out' && this.fadeTimer <= 0) {
-            this.isActive = false
-            return { shouldSpawn: true, blocked: false, x: this.x, y: this.y }
         }
 
         return { shouldSpawn: false, blocked: false, x: this.x, y: this.y }
