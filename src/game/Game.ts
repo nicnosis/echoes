@@ -177,6 +177,23 @@ export class Game {
         // Camera locked to player position - no smoothing
         this.cam.x = this.player.x
         this.cam.y = this.player.y
+
+        // Handle zoom input
+        const inputState = this.inputManager.inputState
+        if (inputState.zoomIn) {
+            this.cam.targetZoom = Math.min(this.cam.targetZoom + 0.2, 3.0) // Max 3x zoom
+        }
+        if (inputState.zoomOut) {
+            this.cam.targetZoom = Math.max(this.cam.targetZoom - 0.2, 0.5) // Min 0.5x zoom
+        }
+
+        // Smooth zoom transition
+        const zoomSpeed = 8 // How fast zoom changes
+        const zoomDiff = this.cam.targetZoom - this.cam.zoom
+        this.cam.zoom += zoomDiff * zoomSpeed * (deltaTime / 1000)
+
+        // Update debug zoom indicator
+        debug.updateZoomIndicator(this.cam.zoom)
     }
 
     private updateWaveTimerDisplay(): void {

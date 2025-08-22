@@ -36,6 +36,14 @@ export class DebugSystem {
         (window as any).myGame = game;
     }
 
+    // Update zoom indicator display
+    updateZoomIndicator(zoomLevel: number) {
+        const zoomIndicator = document.getElementById('zoom-indicator');
+        if (zoomIndicator) {
+            zoomIndicator.textContent = `Zoom: ${zoomLevel.toFixed(1)}x`;
+        }
+    }
+
     // Update debug timers - call this from game update loop
     update(deltaTime: number, isCombatPhase: boolean) {
         // Only allow debug keys during combat phase
@@ -63,6 +71,26 @@ export class DebugSystem {
 
     private setupKeyListeners() {
         window.addEventListener('keydown', (e) => {
+            // ===== DEBUG TOGGLE HOTKEYS =====
+            if (e.code === 'KeyB') {
+                this.display.bounds = !this.display.bounds;
+                const checkbox = document.getElementById('showBounds') as HTMLInputElement;
+                if (checkbox) checkbox.checked = this.display.bounds;
+                console.log('Debug bounds toggled:', this.display.bounds);
+            }
+            if (e.code === 'KeyG') {
+                this.display.grid = !this.display.grid;
+                const checkbox = document.getElementById('showGrid') as HTMLInputElement;
+                if (checkbox) checkbox.checked = this.display.grid;
+                console.log('Debug grid toggled:', this.display.grid);
+            }
+            if (e.code === 'Semicolon') {
+                this.display.playerBreathe = !this.display.playerBreathe;
+                const checkbox = document.getElementById('playerBreathe') as HTMLInputElement;
+                if (checkbox) checkbox.checked = this.display.playerBreathe;
+                console.log('Debug playerBreathe toggled:', this.display.playerBreathe);
+            }
+
             // ===== DEBUG KEY HOLD DETECTION =====
             // Start hold timers for "q" and "e" keys
             if (e.code === 'KeyQ' && !this.qKeyHeld) {
@@ -188,6 +216,18 @@ export class DebugSystem {
         playerBreatheLabel.appendChild(playerBreatheCheckbox);
         playerBreatheLabel.appendChild(playerBreatheText);
         debugPanel.appendChild(playerBreatheLabel);
+
+        // Create zoom indicator
+        const zoomIndicator = document.createElement('div');
+        zoomIndicator.id = 'zoom-indicator';
+        zoomIndicator.style.cssText = `
+            margin-top: 8px;
+            padding-top: 6px;
+            border-top: 1px solid rgba(255, 255, 255, 0.3);
+            color: #aaa;
+        `;
+        zoomIndicator.textContent = 'Zoom: 1.5x';
+        debugPanel.appendChild(zoomIndicator);
 
         // Add to body when DOM is ready
         if (document.body) {

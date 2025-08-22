@@ -4,6 +4,8 @@ export interface InputState {
   left: boolean
   right: boolean
   attack: boolean
+  zoomIn: boolean
+  zoomOut: boolean
 }
 
 export class InputManager {
@@ -13,7 +15,9 @@ export class InputManager {
     down: false,
     left: false,
     right: false,
-    attack: false
+    attack: false,
+    zoomIn: false,
+    zoomOut: false
   }
 
   constructor() {
@@ -30,6 +34,28 @@ export class InputManager {
       this.keys[e.code] = false
       this.updateInputState()
     })
+
+    // Mouse wheel for zoom
+    document.addEventListener('wheel', (e) => {
+      e.preventDefault() // Prevent page scroll
+      
+      // Reset zoom flags
+      this.inputState.zoomIn = false
+      this.inputState.zoomOut = false
+      
+      // Set zoom direction based on wheel delta
+      if (e.deltaY < 0) {
+        this.inputState.zoomIn = true // Wheel up = zoom in
+      } else if (e.deltaY > 0) {
+        this.inputState.zoomOut = true // Wheel down = zoom out
+      }
+      
+      // Reset zoom flags after a brief moment to make them "pulse" inputs
+      setTimeout(() => {
+        this.inputState.zoomIn = false
+        this.inputState.zoomOut = false
+      }, 50)
+    }, { passive: false })
   }
 
   private updateInputState() {
