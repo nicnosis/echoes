@@ -226,9 +226,11 @@ export class UnifiedUI {
     if (this.currentScreen === UIScreen.SHOP && this.dynamicContent) {
       const waveElement = this.dynamicContent.querySelector('#wave-number')
       const somaElement = this.dynamicContent.querySelector('#soma-amount')
+      const goWaveBtn = this.dynamicContent.querySelector('#go-wave-btn')
       
       if (waveElement) waveElement.textContent = waveNumber.toString()
       if (somaElement) somaElement.textContent = soma.toString()
+      if (goWaveBtn) goWaveBtn.textContent = `Begin Wave ${waveNumber + 1}`
     }
   }
 

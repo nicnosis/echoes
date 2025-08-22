@@ -29,17 +29,34 @@ export class FloatingText {
     }
 
     render(renderer: Renderer) {
-        // NO ALPHA - just draw solid color text to test if alpha is the issue
-        const fontSize = 18 // Fixed size for testing
+        const fontSize = 18
         const displayText = this.text ? this.text : this.damage.toString()
 
-        // Use pure world coordinates - let renderer handle camera transform
-        renderer.drawText(
-            displayText,
-            this.x,
-            this.y,
-            this.color, // No alpha modification
-            `${fontSize}px Arial`
-        )
+        // Calculate fade effect - fade in last 30% of duration
+        const fadeStartTime = this.duration * 0.7 // Start fading at 70% of lifetime
+        const alpha = this.timer > fadeStartTime 
+            ? Math.max(0, 1 - ((this.timer - fadeStartTime) / (this.duration - fadeStartTime)))
+            : 1.0
+
+        // Get screen coordinates for manual rendering
+        const screen = (renderer as any).worldToScreen(this.x, this.y, (renderer as any).cam)
+        const ctx = renderer.context
+        
+        ctx.save()
+        ctx.globalAlpha = alpha
+        ctx.font = `${fontSize * (renderer as any).cam.zoom}px Arial`
+        ctx.textAlign = 'center'
+        ctx.textBaseline = 'middle'
+        
+        // Draw stroke (off-black outline)
+        ctx.strokeStyle = '#1a1a1a' // Off-black
+        ctx.lineWidth = 3 * (renderer as any).cam.zoom
+        ctx.strokeText(displayText, screen.x, screen.y)
+        
+        // Draw fill
+        ctx.fillStyle = this.color
+        ctx.fillText(displayText, screen.x, screen.y)
+        
+        ctx.restore()
     }
 }

@@ -428,13 +428,20 @@ export class Game {
         const attractionRadius = this.player.pickupRadius // Attraction starts at pickup radius
 
         this.somaList.forEach(soma => {
+            if (soma.collected) return // Skip collected soma
+            
             soma.update(deltaTime) // Update scatter animation
 
             const dx = this.player.x - soma.x
             const dy = this.player.y - soma.y
-            const distance = Math.sqrt(dx * dx + dy * dy)
+            const distanceSquared = dx * dx + dy * dy
+            const attractionRadiusSquared = attractionRadius * attractionRadius
 
-            if (!soma.collected && distance <= attractionRadius) {
+            // Skip expensive sqrt() for obviously far objects
+            if (distanceSquared > attractionRadiusSquared) return
+
+            const distance = Math.sqrt(distanceSquared)
+            if (distance <= attractionRadius) {
                 // Attract Soma to player center
                 const attractionForce = 600
                 const dt = deltaTime / 1000
@@ -458,11 +465,18 @@ export class Game {
         // Player vs Soma (collection) - using existing logic from old game
         for (let i = this.somaList.length - 1; i >= 0; i--) {
             const soma = this.somaList[i]
+            if (soma.collected) continue
+
             const dx = soma.x - this.player.x
             const dy = soma.y - this.player.y
-            const distance = Math.sqrt(dx * dx + dy * dy)
+            const distanceSquared = dx * dx + dy * dy
+            const collectionRangeSquared = 8 * 8 // 8px threshold for center
 
-            if (!soma.collected && distance <= 8) { // 8px threshold for center
+            // Skip expensive sqrt() for obviously far objects
+            if (distanceSquared > collectionRangeSquared) continue
+
+            const distance = Math.sqrt(distanceSquared)
+            if (distance <= 8) {
                 const { soma: somaValue } = soma.collect()
                 const leveledUp = this.player.gainXP(somaValue)
 
@@ -489,6 +503,16 @@ export class Game {
         // Player vs Enemies (damage)
         this.enemies.forEach(enemy => {
             if (enemy.isDying()) return // Can't damage player while dying
+
+            // Fast distance culling before expensive rectangle collision
+            const dx = enemy.x - this.player.x
+            const dy = enemy.y - this.player.y
+            const distanceSquared = dx * dx + dy * dy
+            const maxCollisionDistance = (enemy.width + this.player.width) / 2 + 10 // Add small buffer
+            const maxDistanceSquared = maxCollisionDistance * maxCollisionDistance
+
+            // Skip expensive rectangle collision for obviously far enemies
+            if (distanceSquared > maxDistanceSquared) return
 
             // Rectangle collision detection  
             const enemyLeft = enemy.x - enemy.width / 2
@@ -577,9 +601,16 @@ export class Game {
 
                 const dx = projectile.x - enemy.x
                 const dy = projectile.y - enemy.y
-                const distance = Math.sqrt(dx * dx + dy * dy)
+                const distanceSquared = dx * dx + dy * dy
                 const enemyRadius = Math.min(enemy.width, enemy.height) / 2 // Use smaller dimension as radius
-                if (distance <= enemyRadius - projectile.size / 2) {
+                const hitRange = enemyRadius - projectile.size / 2
+                const hitRangeSquared = hitRange * hitRange
+
+                // Skip expensive sqrt() for obviously far objects
+                if (distanceSquared > hitRangeSquared) continue
+
+                const distance = Math.sqrt(distanceSquared)
+                if (distance <= hitRange) {
                     this.player.projectiles.splice(i, 1)
                     // Critical hit logic
                     let isCrit = false

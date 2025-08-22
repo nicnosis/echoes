@@ -22,7 +22,6 @@
 .health-fill {
     height: 100%;
     background: #228B22;
-    transition: width 0.3s ease;
 }
 
 .health-text {
@@ -49,7 +48,6 @@
 .xp-fill {
     height: 100%;
     background: linear-gradient(90deg, #8800ff, #aa44ff);
-    transition: width 0.3s ease;
 }
 
 .xp-text {

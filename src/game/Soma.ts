@@ -34,7 +34,9 @@ export class Soma {
         this.floatOffset = Math.random() * Math.PI * 2
         // Assign static appearance
         this.aspect = 1 + Math.random() // 1 to 2
-        this.rotation = Math.random() * Math.PI * 2
+        // Random rotation in 30-degree increments (0°, 30°, 60°, 90°, 120°, 150°, 180°, 210°, 240°, 270°, 300°, 330°)
+        const rotationSteps = Math.floor(Math.random() * 12) // 0-11
+        this.rotation = (rotationSteps * 30) * (Math.PI / 180) // Convert to radians
         this.alpha = 0.4 + Math.random() * 0.3 // 0.4 to 0.7
 
         // Start scatter animation if target position is different
@@ -73,14 +75,9 @@ export class Soma {
         width = Math.max(width, minSize)
         height = Math.max(height, minSize)
         
-        // Handle rotation and glow effects manually but use world coordinates
+        // Render with rotation but no expensive effects
         const ctx = renderer.context
         ctx.save()
-        ctx.globalAlpha = this.alpha
-        
-        // Add pinkish glow (will be scaled by camera)
-        ctx.shadowColor = '#ff66cc'
-        ctx.shadowBlur = 24
         
         // Get screen coordinates for rotation transform
         const screen = (renderer as any).worldToScreen(this.x, this.y, (renderer as any).cam)
@@ -94,6 +91,11 @@ export class Soma {
         // Draw rectangle with camera-scaled dimensions
         ctx.fillStyle = '#ff33cc'
         ctx.fillRect(-scaledWidth / 2, -scaledHeight / 2, scaledWidth, scaledHeight)
+        
+        // Add stroke
+        ctx.strokeStyle = '#9BE4F5'
+        ctx.lineWidth = 1 * (renderer as any).cam.zoom
+        ctx.strokeRect(-scaledWidth / 2, -scaledHeight / 2, scaledWidth, scaledHeight)
         
         ctx.restore()
     }

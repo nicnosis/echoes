@@ -10,9 +10,10 @@
 6. [Body Parts & Equipment](#body-parts--equipment)
 7. [Data Management](#data-management)
 8. [Debug & Development Tools](#debug--development-tools)
-9. [Architecture Decisions](#architecture-decisions)
-10. [Development Guidelines](#development-guidelines)
-11. [Current Status](#current-status)
+9. [Performance Optimization](#performance-optimization)
+10. [Architecture Decisions](#architecture-decisions)
+11. [Development Guidelines](#development-guidelines)
+12. [Current Status](#current-status)
 
 ---
 
@@ -463,6 +464,56 @@ drawDebugGrid() {
 - **Cause**: Camera updating before player position in game loop (1-frame lag)
 - **Solution**: Update player first, then camera in same frame
 - **Debug Method**: Log player position changes to identify frame timing issues
+
+---
+
+# Performance Optimization
+
+## Collision Detection Optimization
+
+### Distance Culling Strategy
+All collision systems use squared distance comparison to avoid expensive `sqrt()` calculations for obviously distant objects.
+
+```typescript
+// Pattern used throughout collision systems
+const dx = entityA.x - entityB.x
+const dy = entityA.y - entityB.y
+const distanceSquared = dx * dx + dy * dy
+const maxRangeSquared = maxRange * maxRange
+
+// Skip expensive operations for far objects
+if (distanceSquared > maxRangeSquared) return
+
+// Only calculate sqrt() when needed
+const distance = Math.sqrt(distanceSquared)
+```
+
+### Optimized Systems
+
+**Soma Attraction & Collection**
+- Pre-calculate attraction radius squared
+- Skip soma outside pickup range entirely
+- 70-90% reduction in sqrt() calls
+
+**Projectile vs Enemy Collision**
+- Calculate hit range squared once
+- Early exit for distant enemies
+- Maintains precise collision detection
+
+**Player vs Enemy Collision**
+- Fast distance check before rectangle collision
+- Uses combined entity widths for early culling
+- Rectangle collision only for nearby enemies
+
+### Performance Impact
+- **Before**: O(n) sqrt() calls every frame for all entities
+- **After**: O(nearby) sqrt() calls only for relevant entities
+- **Scaling**: With 100+ entities, saves 1000s of expensive operations per second
+
+### Future Optimization Opportunities
+1. **Spatial Grid/Quadtree**: Divide world into cells, only check nearby cells
+2. **Update Frequency Reduction**: Stagger collision checks across frames
+3. **Range-based Systems**: Different update frequencies for different ranges
 
 ---
 

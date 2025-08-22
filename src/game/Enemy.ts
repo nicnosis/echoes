@@ -33,6 +33,16 @@ export class Enemy {
     private animationPeriod: number = 750 // Period in milliseconds for full cycle
     private animationOffset: number = Math.random() * Math.PI * 2 // Random start phase
 
+    // Death spark particles
+    private sparks: Array<{
+        x: number,
+        y: number,
+        vx: number,
+        vy: number,
+        life: number,
+        maxLife: number
+    }> = []
+
     constructor(x: number, y: number) {
         this.x = x
         this.y = y
@@ -62,6 +72,9 @@ export class Enemy {
         if (this.hitFlashTimer > 0) {
             this.hitFlashTimer -= deltaTime
         }
+
+        // Update sparks
+        this.updateSparks(deltaTime)
 
         // Update animation time for breathing effect
         if (!this.dying) {
@@ -177,6 +190,9 @@ export class Enemy {
         
         ctx.restore()
 
+        // Render sparks (outside breathing transform)
+        this.renderSparks(renderer)
+
         // Debug: Draw cyan hitbox outline (rendered outside breathing transform)
         if (debug.display.bounds) {
             renderer.drawRect(this.x, this.y, this.width, this.height, 'cyan', { strokeOnly: true, lineWidth: 2 })
@@ -232,6 +248,83 @@ export class Enemy {
     private startDeathAnimation() {
         this.dying = true
         this.deathTimer = 0
+        this.createDeathSparks()
+    }
+
+    // Create spark burst effect when enemy dies
+    private createDeathSparks() {
+        const sparkCount = 6 + Math.floor(Math.random() * 3) // 6-8 sparks
+        
+        for (let i = 0; i < sparkCount; i++) {
+            const angle = (Math.PI * 2 * i) / sparkCount + (Math.random() - 0.5) * 0.5 // Even distribution with some randomness
+            const speed = 104 + Math.random() * 52 // 104-156 pixels per second (30% faster)
+            
+            this.sparks.push({
+                x: this.x,
+                y: this.y,
+                vx: Math.cos(angle) * speed,
+                vy: Math.sin(angle) * speed,
+                life: 400 + Math.random() * 200, // 400-600ms lifespan
+                maxLife: 400 + Math.random() * 200
+            })
+        }
+    }
+
+    // Update spark particles
+    private updateSparks(deltaTime: number) {
+        const dt = deltaTime / 1000
+        
+        for (let i = this.sparks.length - 1; i >= 0; i--) {
+            const spark = this.sparks[i]
+            
+            // Update position
+            spark.x += spark.vx * dt
+            spark.y += spark.vy * dt
+            
+            // Apply slight gravity and friction
+            spark.vy += 50 * dt // Gravity
+            spark.vx *= 0.98 // Friction
+            spark.vy *= 0.98
+            
+            // Update life
+            spark.life -= deltaTime
+            
+            // Remove dead sparks
+            if (spark.life <= 0) {
+                this.sparks.splice(i, 1)
+            }
+        }
+    }
+
+    // Render spark particles as small lines
+    private renderSparks(renderer: Renderer) {
+        if (this.sparks.length === 0) return
+        
+        const ctx = renderer.context
+        ctx.save()
+        
+        this.sparks.forEach(spark => {
+            // Calculate fade based on remaining life
+            const alpha = Math.max(0, spark.life / spark.maxLife)
+            
+            // Get screen coordinates
+            const screen = (renderer as any).worldToScreen(spark.x, spark.y, (renderer as any).cam)
+            
+            // Draw spark as a thicker, longer line in direction of movement
+            const lineLength = 6 * (renderer as any).cam.zoom // Double length
+            const angle = Math.atan2(spark.vy, spark.vx)
+            const endX = screen.x + Math.cos(angle) * lineLength
+            const endY = screen.y + Math.sin(angle) * lineLength
+            
+            ctx.strokeStyle = `rgba(255, 255, 180, ${alpha})` // Bright yellow-white
+            ctx.lineWidth = 3 * (renderer as any).cam.zoom // Double thickness
+            ctx.beginPath()
+            ctx.moveTo(screen.x, screen.y)
+            ctx.lineTo(endX, endY)
+            ctx.stroke()
+        })
+        
+        ctx.restore()
     }
 
     public isDying(): boolean {
