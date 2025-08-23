@@ -1,16 +1,10 @@
 // ===== DEBUG SYSTEM =====
-// Handles debug key holds and global debug variables
+// Handles debug hotkeys and global debug variables
 // To disable debugging, comment out or remove this entire file
 
 export class DebugSystem {
-    private qKeyHoldTimer: number = 0;
-    private eKeyHoldTimer: number = 0;
-    private qKeyHeld: boolean = false;
-    private eKeyHeld: boolean = false;
-    private readonly KEY_HOLD_DURATION: number = 800; // 0.8 seconds
-    
-    private onRestart: (() => void) | null = null;
-    private onEndWave: (() => void) | null = null;
+    private onAddXP: ((amount: number) => void) | null = null;
+    private onSetWaveTimer: ((time: number) => void) | null = null;
 
     // Visual debug options - modular structure
     public display = {
@@ -25,9 +19,9 @@ export class DebugSystem {
     }
 
     // Initialize debug callbacks
-    initialize(onRestart: () => void, onEndWave: () => void) {
-        this.onRestart = onRestart;
-        this.onEndWave = onEndWave;
+    initialize(onAddXP: (amount: number) => void, onSetWaveTimer: (time: number) => void) {
+        this.onAddXP = onAddXP;
+        this.onSetWaveTimer = onSetWaveTimer;
     }
 
     // Setup global debug variables
@@ -44,30 +38,6 @@ export class DebugSystem {
         }
     }
 
-    // Update debug timers - call this from game update loop
-    update(deltaTime: number, isCombatPhase: boolean) {
-        // Only allow debug keys during combat phase
-        if (isCombatPhase) {
-            if (this.qKeyHeld) {
-                this.qKeyHoldTimer += deltaTime;
-                if (this.qKeyHoldTimer >= this.KEY_HOLD_DURATION) {
-                    console.log('Q key held for 800ms - restarting game');
-                    if (this.onRestart) this.onRestart();
-                    this.qKeyHeld = false;
-                    this.qKeyHoldTimer = 0;
-                }
-            }
-            if (this.eKeyHeld) {
-                this.eKeyHoldTimer += deltaTime;
-                if (this.eKeyHoldTimer >= this.KEY_HOLD_DURATION) {
-                    console.log('E key held for 800ms - ending wave');
-                    if (this.onEndWave) this.onEndWave();
-                    this.eKeyHeld = false;
-                    this.eKeyHoldTimer = 0;
-                }
-            }
-        }
-    }
 
     private setupKeyListeners() {
         window.addEventListener('keydown', (e) => {
@@ -76,45 +46,30 @@ export class DebugSystem {
                 this.display.bounds = !this.display.bounds;
                 const checkbox = document.getElementById('showBounds') as HTMLInputElement;
                 if (checkbox) checkbox.checked = this.display.bounds;
-                console.log('Debug bounds toggled:', this.display.bounds);
+                // console.log('Debug bounds toggled:', this.display.bounds);
             }
             if (e.code === 'KeyG') {
                 this.display.grid = !this.display.grid;
                 const checkbox = document.getElementById('showGrid') as HTMLInputElement;
                 if (checkbox) checkbox.checked = this.display.grid;
-                console.log('Debug grid toggled:', this.display.grid);
+                // console.log('Debug grid toggled:', this.display.grid);
             }
             if (e.code === 'Semicolon') {
                 this.display.playerBreathe = !this.display.playerBreathe;
                 const checkbox = document.getElementById('playerBreathe') as HTMLInputElement;
                 if (checkbox) checkbox.checked = this.display.playerBreathe;
-                console.log('Debug playerBreathe toggled:', this.display.playerBreathe);
+                // console.log('Debug playerBreathe toggled:', this.display.playerBreathe);
             }
-
-            // ===== DEBUG KEY HOLD DETECTION =====
-            // Start hold timers for "q" and "e" keys
-            if (e.code === 'KeyQ' && !this.qKeyHeld) {
-                this.qKeyHeld = true;
-                this.qKeyHoldTimer = 0;
-                console.log('Q key pressed - hold timer started');
-            }
-            if (e.code === 'KeyE' && !this.eKeyHeld) {
-                this.eKeyHeld = true;
-                this.eKeyHoldTimer = 0;
-                console.log('E key pressed - hold timer started');
-            }
-        });
-
-        window.addEventListener('keyup', (e) => {
-            // ===== DEBUG KEY HOLD RESET =====
-            // Reset hold timers when keys are released
-            if (e.code === 'KeyQ') {
-                this.qKeyHeld = false;
-                this.qKeyHoldTimer = 0;
+            if (e.code === 'Digit1') {
+                if (this.onAddXP) {
+                    this.onAddXP(50);
+                }
             }
             if (e.code === 'KeyE') {
-                this.eKeyHeld = false;
-                this.eKeyHoldTimer = 0;
+                if (this.onSetWaveTimer) {
+                    this.onSetWaveTimer(0);
+                    console.log('Debug: Wave timer set to 0');
+                }
             }
         });
     }

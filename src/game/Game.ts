@@ -58,10 +58,10 @@ export class Game {
     // Game loop timing
     private lastTime: number = 0
 
-    // Wave configuration (keeping existing timings)
+    // Wave configuration
     private waveData = [
-        { wave: 1, duration: 10 }, //its 20 but i want to test it out
-        { wave: 2, duration: 10 }, //its 25 but i want to test it out
+        { wave: 1, duration: 20 },
+        { wave: 2, duration: 25 },
         { wave: 3, duration: 30 },
         { wave: 4, duration: 35 },
         { wave: 5, duration: 40 },
@@ -73,14 +73,14 @@ export class Game {
         { wave: 11, duration: 60 },
         { wave: 12, duration: 60 },
         { wave: 13, duration: 60 },
-        { wave: 14, duration: 75 },
+        { wave: 14, duration: 60 },
         { wave: 15, duration: 60 },
         { wave: 16, duration: 60 },
         { wave: 17, duration: 60 },
         { wave: 18, duration: 60 },
         { wave: 19, duration: 60 },
         { wave: 20, duration: 60 },
-        { wave: 21, duration: 90 }
+        { wave: 21, duration: 60 }
     ]
 
     constructor(canvas: HTMLCanvasElement) {
@@ -105,6 +105,12 @@ export class Game {
 
         // Setup input listeners
         this.setupEventListeners()
+
+        // Initialize debug system with callbacks
+        debug.initialize(
+            (amount: number) => this.addXPDebug(amount),
+            (time: number) => this.setWaveTimerDebug(time)
+        )
 
         console.log('🎮 Game initialized with unified UI and HUD')
     }
@@ -299,9 +305,9 @@ export class Game {
     private updateLevelUp(deltaTime: number): void {
         // Level up screen handles its own logic via UnifiedUI
         // Player cannot move during level up
-        // Only update damage flash and invulnerability timers
-        if (this.player.damageFlashTimer > 0) {
-            this.player.damageFlashTimer -= deltaTime
+        // Only update hit flash and invulnerability timers
+        if (this.player.hitFlashTimer > 0) {
+            this.player.hitFlashTimer -= deltaTime
         }
         if (this.player.invulnerabilityTimer > 0) {
             this.player.invulnerabilityTimer -= deltaTime
@@ -314,9 +320,9 @@ export class Game {
     private updateShop(deltaTime: number): void {
         // Shop screen handles its own logic via UnifiedUI  
         // Player cannot move during shop
-        // Only update damage flash and invulnerability timers
-        if (this.player.damageFlashTimer > 0) {
-            this.player.damageFlashTimer -= deltaTime
+        // Only update hit flash and invulnerability timers
+        if (this.player.hitFlashTimer > 0) {
+            this.player.hitFlashTimer -= deltaTime
         }
         if (this.player.invulnerabilityTimer > 0) {
             this.player.invulnerabilityTimer -= deltaTime
@@ -378,6 +384,22 @@ export class Game {
         this.ui.updateStats(this.player)
 
         console.log(`⏱️ Wave duration: ${this.waveTimer}s, Starting level: ${this.waveLevelStartedAt}`)
+    }
+
+    // Debug method to add XP quickly
+    private addXPDebug(amount: number): void {
+        const leveledUp = this.player.gainXP(amount)
+        this.ui.updateStats(this.player)
+        
+        if (leveledUp) {
+            console.log(`🎉 DEBUG LEVEL UP! Now level ${this.player.stats.level}`)
+        }
+    }
+
+    // Debug method to set wave timer (for ending wave quickly)
+    private setWaveTimerDebug(time: number): void {
+        this.waveTimer = time
+        console.log(`⏱️ DEBUG: Wave timer set to ${time}`)
     }
 
     private endWave(): void {
@@ -653,7 +675,7 @@ export class Game {
 
     private dropSoma(x: number, y: number): void {
         // Create soma drops when enemies die
-        const somaCount = 50 + Math.floor(Math.random() * 3) // 50-52 Soma
+        const somaCount = 1
         const angleStep = (Math.PI * 2) / somaCount
         const baseAngle = Math.random() * Math.PI * 2
 

@@ -11,9 +11,10 @@
 7. [Data Management](#data-management)
 8. [Debug & Development Tools](#debug--development-tools)
 9. [Performance Optimization](#performance-optimization)
-10. [Architecture Decisions](#architecture-decisions)
-11. [Development Guidelines](#development-guidelines)
-12. [Current Status](#current-status)
+10. [System Ownership & Boundaries](#system-ownership--boundaries)
+11. [Architecture Decisions](#architecture-decisions)
+12. [Development Guidelines](#development-guidelines)
+13. [Current Status](#current-status)
 
 ---
 
@@ -211,6 +212,33 @@ ctx.translate(-screen.x, -bottomY)
 - **Enemies**: Grounded breathing from feet up, always active, ±12% scale variation
 - **Breathing Isolation**: Debug elements, hitboxes, and UI render outside breathing transforms
 
+## Hit Flash System
+
+### Coordinated Flash Effects
+When entities take damage, multiple visual elements flash white simultaneously for 200ms:
+
+**Player Hit Flash:**
+- **Body part sprites**: White filter using `brightness(2) saturate(0)`
+- **HUD HP bar**: Background, fill, and border flash white
+- **Personal HP bar**: All elements flash white above player's head
+
+**Enemy Hit Flash:**
+- **Enemy sprites**: Same white filter effect as player
+- **Duration**: 200ms for immediate, satisfying feedback
+
+### Implementation
+```typescript
+// Canvas filter for sprite flash
+if (this.hitFlashTimer > 0) {
+    ctx.filter = 'brightness(2) saturate(0)'
+}
+
+// Color helper for UI elements
+private getFlashColor(normalColor: string): string {
+    return this.hitFlashTimer > 0 ? '#ffffff' : normalColor
+}
+```
+
 ## Rendering Pipeline
 
 ### Canvas Setup
@@ -255,7 +283,10 @@ private render(): void {
 - **No Manual Scaling**: Entities never calculate screen coordinates directly
 
 ### Camera Configuration
-- **1.5x Zoom**: Enhances visual personality without performance impact
+- **Default Zoom**: 1.5x enhances visual personality without performance impact
+- **Zoom Range**: 0.5x to 3.0x via mouse wheel controls
+- **Zoom Controls**: Mouse wheel up = zoom in, mouse wheel down = zoom out
+- **Smooth Zoom**: 8x transition speed with targetZoom system
 - **Lockstep Following**: Camera.x/y = player.x/y (no smoothing lag)
 - **Canvas Size**: 1200x900 for more visual real estate
 
@@ -425,15 +456,19 @@ debugPanel.style.cssText = `
 `
 ```
 
-### Debug Controls
-- **`debug.showBounds`** - Show collision boundaries and coordinate grid
-- **`debug.playerBreathe`** - Toggle player breathing animation (for testing camera issues)
+### Debug Hotkeys
+- **B** - Toggle collision boundaries and hitboxes display
+- **G** - Toggle coordinate grid display
+- **;** (Semicolon) - Toggle player breathing animation
+- **1** - Add 50 XP instantly (for testing level progression)
+- **E** - Set wave timer to 0 (end current wave naturally)
 
-### Real-time Toggle Controls
-- **Show Bounds**: Checkbox to display collision boundaries
-- **Player Breathe**: Checkbox to enable/disable breathing animation
-- **Extensible**: Easy to add more debug options (spawn rates, stats, etc.)
-- **State Management**: Singleton `DebugSystem` class manages all debug state
+### Debug Panel Features
+- **Show Bounds**: Checkbox and hotkey (B) to display collision boundaries
+- **Show Grid**: Checkbox and hotkey (G) to show coordinate grid
+- **Player Breathe**: Checkbox and hotkey (;) to enable/disable breathing animation
+- **Zoom Indicator**: Real-time display of current camera zoom level
+- **State Management**: Singleton `DebugSystem` class with hotkey synchronization
 
 ## Debug Visualization System
 
@@ -514,6 +549,63 @@ const distance = Math.sqrt(distanceSquared)
 1. **Spatial Grid/Quadtree**: Divide world into cells, only check nearby cells
 2. **Update Frequency Reduction**: Stagger collision checks across frames
 3. **Range-based Systems**: Different update frequencies for different ranges
+
+---
+
+# System Ownership & Boundaries
+
+## Stats System Ownership
+
+**ONLY Player.ts can modify stats:**
+- ✅ `player.gainXP()` - level progression 
+- ✅ `player.selectLevelUpBonus()` - manual stat increases
+- ✅ `player.replaceBodyPart()` - gear stat recalculation
+- ✅ `player.takeDamage()` - current HP changes
+- ✅ `player.heal()` - current HP restoration
+
+**Game.ts provides XP sources:**
+- ✅ Enemy kills → `player.gainXP(1)`
+- ✅ Soma collection → `player.gainXP(somaValue)`
+- ✅ Debug hotkey → `player.gainXP(50)`
+
+**Stats.ts is internal to Player:**
+- ❌ **NEVER** access `player.stats` directly from Game.ts
+- ❌ **NEVER** modify stats from outside Player.ts
+- ✅ Use Player getter methods: `player.currentHP`, `player.maxHP`, etc.
+
+## Entity Lifecycle Ownership
+
+**Game.ts owns all entity arrays:**
+- `this.enemies[]` - spawning, cleanup, collision detection
+- `this.somaList[]` - spawning, attraction, collection
+- `this.player.projectiles[]` - creation, collision, cleanup
+
+**Entities own their internal state:**
+- **Player.ts**: movement, animation, body parts, weapons
+- **Enemy.ts**: AI, death animation, spark effects, hit flash
+- **Soma.ts**: scatter animation, rotation, collection state
+
+**Collision Detection Rules:**
+- ✅ Game.ts handles all collision detection (player vs enemy, projectile vs enemy, etc.)
+- ✅ Entities provide collision data via `getBounds()` methods
+- ❌ Entities **NEVER** directly modify other entities
+
+## UI System Boundaries
+
+**UnifiedUI.ts owns phase-specific screens:**
+- Pause, Level Up, Shop screens and their event handling
+- ✅ Calls back to Game.ts via registered callbacks
+- ❌ **NEVER** directly modifies game state
+
+**HUD.ts displays real-time data:**
+- ✅ Reads player stats for display: `player.stats.getCurrentHP()`
+- ❌ **NEVER** modifies player state
+- ✅ Applies hit flash styling via `player.hitFlashTimer`
+
+**Game.ts mediates UI ↔ Game State:**
+- ✅ `ui.updateStats(player)` - push data to UI
+- ✅ UI callbacks modify game state via Game methods
+- ❌ UI components **NEVER** access entities directly
 
 ---
 

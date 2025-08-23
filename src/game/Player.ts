@@ -134,7 +134,7 @@ export class Player {
         }
 
         // Movement
-        const naturalSpeed = 150
+        const naturalSpeed = 220 // This is move speed that gets modified by the move speed bonus
         const moveSpeedBonus = this.stats.getStat('moveSpeed')
         const effectiveMoveSpeed = naturalSpeed * (1 + (moveSpeedBonus / 100))
 
