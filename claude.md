@@ -583,13 +583,18 @@ const distance = Math.sqrt(distanceSquared)
 
 **Game.ts owns all entity arrays:**
 - `this.enemies[]` - spawning, cleanup, collision detection
-- `this.somaList[]` - spawning, attraction, collection
+- `this.somaList[]` - collection management, attraction, world storage
 - `this.player.projectiles[]` - creation, collision, cleanup
 
 **Entities own their internal state:**
 - **Player.ts**: movement, animation, body parts, weapons
-- **Enemy.ts**: AI, death animation, spark effects, hit flash
+- **Enemy.ts**: AI, death animation, spark effects, hit flash, soma drop creation
 - **Soma.ts**: scatter animation, rotation, collection state
+
+**Soma Drop System:**
+- ✅ **Enemy.ts** creates soma via `dropSoma()` factory method (owns what/how much to drop)
+- ✅ **Game.ts** receives and manages dropped soma in world collection
+- ✅ Clean separation: Enemy controls drops, Game manages world state
 
 **Collision Detection Rules:**
 - ✅ Game.ts handles all collision detection (player vs enemy, projectile vs enemy, etc.)
