@@ -420,13 +420,18 @@ private updateGear(bodyParts: BodyPart[]): void {
 
 ### File Organization in `/data/` folder
 - `bodyparts.csv` - All body part definitions with stats and scaling
+- `wavetimes.csv` - Wave durations and configuration data
 - `enemies.csv` - Enemy types and properties (future)
 - `xptable.csv` - Experience requirements per level (future)
-- `waves.csv` - Wave configuration data (future)
 
 ### Body Parts CSV Structure
 ```csv
 id,displayName,type,imgFileName,scale,maxHP,hpRegen,moveSpeed,attack,armor,critChance,luck
+```
+
+### Wave Times CSV Structure
+```csv
+wave,duration
 ```
 
 ### Design Rationale
@@ -434,6 +439,7 @@ id,displayName,type,imgFileName,scale,maxHP,hpRegen,moveSpeed,attack,armor,critC
 - **Semantic access**: `row['scale']` instead of `row[4]` for maintainability
 - **maxHP naming**: Clear distinction from current HP
 - **Extensible**: Easy to add new stats without breaking existing parsing
+- **Wave Data Decoupling**: Wave durations moved from hardcoded arrays to CSV for easier balancing
 
 ---
 
@@ -733,7 +739,7 @@ const distance = Math.sqrt(distanceSquared)
 4. Visual polish and particle effects
 
 ## Development Commands
-- **Testing**: Launch `npm run dev` and view at localhost (port will be displayed)
+- **Testing**: Do not run `npm run dev`; the developer already has this running. Just tell developer to test it.
 - **Building**: Standard npm build process through Vite
 - **Linting**: Check for lint/typecheck commands in package.json
 

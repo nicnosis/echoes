@@ -8,6 +8,7 @@ import { UnifiedUI, UIScreen } from '../ui/components/UnifiedUI'
 import { HUD } from '../ui/components/HUD'
 import { FloatingText } from './FloatingText'
 import { debug } from '../utils/Debug'
+import { WaveDataLoader } from './WaveDataLoader'
 
 enum GamePhase {
     WAVE = 'wave',
@@ -58,30 +59,7 @@ export class Game {
     // Game loop timing
     private lastTime: number = 0
 
-    // Wave configuration
-    private waveData = [
-        { wave: 1, duration: 20 },
-        { wave: 2, duration: 25 },
-        { wave: 3, duration: 30 },
-        { wave: 4, duration: 35 },
-        { wave: 5, duration: 40 },
-        { wave: 6, duration: 50 },
-        { wave: 7, duration: 60 },
-        { wave: 8, duration: 60 },
-        { wave: 9, duration: 60 },
-        { wave: 10, duration: 60 },
-        { wave: 11, duration: 60 },
-        { wave: 12, duration: 60 },
-        { wave: 13, duration: 60 },
-        { wave: 14, duration: 60 },
-        { wave: 15, duration: 60 },
-        { wave: 16, duration: 60 },
-        { wave: 17, duration: 60 },
-        { wave: 18, duration: 60 },
-        { wave: 19, duration: 60 },
-        { wave: 20, duration: 60 },
-        { wave: 21, duration: 60 }
-    ]
+    // Wave configuration loaded from CSV
 
     constructor(canvas: HTMLCanvasElement) {
         this.canvas = canvas
@@ -112,6 +90,9 @@ export class Game {
             (time: number) => this.setWaveTimerDebug(time)
         )
 
+        // Load wave data from CSV
+        this.initializeWaveData()
+        
         console.log('🎮 Game initialized with unified UI and HUD')
     }
 
@@ -203,10 +184,12 @@ export class Game {
     }
 
     private updateWaveTimerDisplay(): void {
-        if (this.gamePhase === GamePhase.WAVE && this.waveIndex < this.waveData.length) {
+        if (this.gamePhase === GamePhase.WAVE) {
             const timerElement = document.querySelector('.hud-wave-timer') as HTMLElement
             if (timerElement) {
-                const timerText = `Wave ${this.waveData[this.waveIndex].wave}: ${Math.ceil(this.waveTimer)}s`
+                const waveData = WaveDataLoader.getWaveData(this.waveIndex)
+                const waveNumber = waveData ? waveData.wave : this.waveIndex + 1
+                const timerText = `Wave ${waveNumber}: ${Math.ceil(this.waveTimer)}s`
                 timerElement.textContent = timerText
                 timerElement.style.display = 'block'
             }
@@ -368,7 +351,7 @@ export class Game {
 
         // Initialize wave state
         this.waveLevelStartedAt = this.player.stats.level
-        this.waveTimer = this.getWaveDuration(this.waveIndex)
+        this.waveTimer = WaveDataLoader.getWaveDuration(this.waveIndex)
 
         // Recalculate stats and heal to full for wave start
         this.player.stats.recalculateStats(this.player.body)
@@ -665,7 +648,8 @@ export class Game {
                     this.floatingTexts.push(new FloatingText(enemy.x, enemy.y - 20, damage, isCrit))
 
                     if (enemyDied) {
-                        this.dropSoma(enemy.x, enemy.y)
+                        const droppedSoma = enemy.dropSoma()
+                        this.somaList.push(...droppedSoma)
                     }
                     break
                 }
@@ -673,34 +657,19 @@ export class Game {
         }
     }
 
-    private dropSoma(x: number, y: number): void {
-        // Create soma drops when enemies die
-        const somaCount = 1
-        const angleStep = (Math.PI * 2) / somaCount
-        const baseAngle = Math.random() * Math.PI * 2
-
-        for (let i = 0; i < somaCount; i++) {
-            // Spread in a small arc/circle with random offset
-            const angle = baseAngle + i * angleStep + (Math.random() - 0.5) * 0.4
-            const distance = 20 + Math.random() * 10
-            const targetX = x + Math.cos(angle) * distance
-            const targetY = y + Math.sin(angle) * distance
-            // Create Soma with scatter animation from center to target position
-            this.somaList.push(new Soma(x, y, 1, targetX, targetY))
-        }
-    }
 
     // =============================================================================
     // UTILITY METHODS
     // =============================================================================
 
-    private getWaveDuration(waveIndex: number): number {
-        // Use existing wave data if available, otherwise use formula
-        if (waveIndex < this.waveData.length) {
-            return this.waveData[waveIndex].duration
+    // Initialize wave data from CSV
+    private async initializeWaveData(): Promise<void> {
+        try {
+            await WaveDataLoader.loadWaveData()
+            console.log('📊 Wave data loaded from CSV')
+        } catch (error) {
+            console.error('Failed to load wave data:', error)
         }
-        // Fallback formula: 30 seconds base + 5 seconds per wave
-        return 30 + (waveIndex * 5)
     }
 
     private setupEventListeners(): void {

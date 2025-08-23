@@ -1,6 +1,7 @@
 import { Renderer } from '../render/Renderer'
 import { Player } from './Player'
 import { debug } from '../utils/Debug'
+import { Soma } from './Soma'
 
 // Base speed constant for reference (same as Player)
 const BASE_MOVE_SPEED = 100
@@ -13,6 +14,7 @@ export class Enemy {
     public moveSpeed: number = BASE_MOVE_SPEED * 0.8 // Enemies are slightly slower than player
     public health: number = 3
     public maxHealth: number = 15
+    private somaDropCount: number = 1 // How many soma this enemy drops when it dies
     private dying: boolean = false
     private deathTimer: number = 0
     private deathDuration: number = 400 // 500ms death animation
@@ -333,5 +335,24 @@ export class Enemy {
 
     public isDeathAnimationComplete(): boolean {
         return this.dying && this.deathTimer >= this.deathDuration
+    }
+
+    // Factory method: creates soma drops when enemy dies (doesn't store them)
+    public dropSoma(): Soma[] {
+        const somaObjects: Soma[] = []
+        const angleStep = (Math.PI * 2) / this.somaDropCount
+        const baseAngle = Math.random() * Math.PI * 2
+
+        for (let i = 0; i < this.somaDropCount; i++) {
+            // Spread in a small arc/circle with random offset
+            const angle = baseAngle + i * angleStep + (Math.random() - 0.5) * 0.4
+            const distance = 20 + Math.random() * 10
+            const targetX = this.x + Math.cos(angle) * distance
+            const targetY = this.y + Math.sin(angle) * distance
+            // Create Soma with scatter animation from center to target position
+            somaObjects.push(new Soma(this.x, this.y, 1, targetX, targetY))
+        }
+
+        return somaObjects
     }
 }

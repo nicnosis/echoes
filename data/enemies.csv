@@ -1,5 +1,2 @@
 id,name,imagePath,width,height,health,moveSpeed,damage,damageCooldown,deathDuration,directionDeadZone,minWave,spawnWeight,xpValue
 crab,Basic Crab,/enemies/nu-crab.png,30,25,3,80,1,1000,400,2,1,5,10
-scout,Fast Scout,/enemies/scout.png,25,20,2,120,1,800,300,1.5,3,3,15
-tank,Heavy Tank,/enemies/tank.png,40,35,8,60,2,1500,600,3,5,2,25
-swarm,Tiny Swarm,/enemies/swarm.png,15,15,1,100,1,500,200,1,2,8,5
