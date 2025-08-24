@@ -67,6 +67,9 @@ export class Player {
     // Track movement state for breathing animation
     private wasMoving: boolean = false
 
+    // Visual effects - outline toggle
+    public showOutline: boolean = false
+
 
     constructor(x: number, y: number) {
         this.x = x
@@ -347,18 +350,31 @@ export class Player {
                 const worldX = this.x + position.x
                 const worldY = this.y + position.y
                 
-                // Apply hit flash effect
-                const ctx = renderer.context
-                ctx.save()
-                if (this.hitFlashTimer > 0) {
-                    ctx.filter = 'brightness(2) saturate(0)'
-                }
-                
                 // Use renderer's camera-aware drawImage (no breathing transforms)
                 const finalWidth = sprite.naturalWidth * bodyPart.scale
                 const finalHeight = sprite.naturalHeight * bodyPart.scale
                 
+                const ctx = renderer.context
+                ctx.save()
                 
+                // Draw outline sprite first (behind main sprite)
+                if (this.showOutline && bodyPart.isOutlineLoaded()) {
+                    const outlineSprite = bodyPart.getOutlineSprite()
+                    if (outlineSprite) {
+                        // Outline sprite is same size as original now
+                        const outlineWidth = outlineSprite.width * bodyPart.scale
+                        const outlineHeight = outlineSprite.height * bodyPart.scale
+                        // No offset needed - same position as main sprite
+                        renderer.drawImage(outlineSprite, worldX, worldY, outlineWidth, outlineHeight, !this.facingRight)
+                    }
+                }
+                
+                // Apply hit flash effect for main sprite
+                if (this.hitFlashTimer > 0) {
+                    ctx.filter = 'brightness(2) saturate(0)'
+                }
+                
+                // Draw main sprite on top
                 renderer.drawImage(sprite, worldX, worldY, finalWidth, finalHeight, !this.facingRight)
                 
                 ctx.restore()
@@ -390,15 +406,39 @@ export class Player {
                 const ctx = renderer.context
                 ctx.save()
                 
-                // Apply hit flash effect - white tint
+                const drawX = this.facingRight ? screen.x - finalWidth/2 : -screen.x - finalWidth/2
+                const drawY = screen.y - finalHeight/2
+                
+                // Draw outline sprite first (behind main sprite)
+                if (this.showOutline && bodyPart.isOutlineLoaded()) {
+                    const outlineSprite = bodyPart.getOutlineSprite()
+                    if (outlineSprite) {
+                        // Outline sprite is same size as original now
+                        const outlineWidth = outlineSprite.width * bodyPart.scale * (renderer as any).cam.zoom
+                        const outlineHeight = outlineSprite.height * bodyPart.scale * (renderer as any).cam.zoom
+                        // Same position as main sprite
+                        const outlineDrawX = this.facingRight ? 
+                            screen.x - outlineWidth/2 : 
+                            -screen.x - outlineWidth/2
+                        const outlineDrawY = screen.y - outlineHeight/2
+                        
+                        if (this.facingRight) {
+                            ctx.drawImage(outlineSprite, outlineDrawX, outlineDrawY, outlineWidth, outlineHeight)
+                        } else {
+                            ctx.save()
+                            ctx.scale(-1, 1)
+                            ctx.drawImage(outlineSprite, outlineDrawX, outlineDrawY, outlineWidth, outlineHeight)
+                            ctx.restore()
+                        }
+                    }
+                }
+                
+                // Apply hit flash effect for main sprite
                 if (this.hitFlashTimer > 0) {
                     ctx.filter = 'brightness(2) saturate(0)'
                 }
                 
-                const drawX = this.facingRight ? screen.x - finalWidth/2 : -screen.x - finalWidth/2
-                const drawY = screen.y - finalHeight/2
-                
-                
+                // Draw main sprite on top
                 if (this.facingRight) {
                     ctx.drawImage(sprite, drawX, drawY, finalWidth, finalHeight)
                 } else {

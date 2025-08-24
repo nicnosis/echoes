@@ -52,8 +52,8 @@ export class Game {
   private cam = {
     x: 0,
     y: 0,
-    zoom: 1.5,
-    targetZoom: 1.5,
+    zoom: 1.75,
+    targetZoom: 1.75,
   };
 
   // Game loop timing
@@ -168,10 +168,10 @@ export class Game {
     // Handle zoom input
     const inputState = this.inputManager.inputState;
     if (inputState.zoomIn) {
-      this.cam.targetZoom = Math.min(this.cam.targetZoom + 0.05, 3.0); // Max 3x zoom
+      this.cam.targetZoom = Math.min(this.cam.targetZoom + 0.1, 5.0); // Max 5x zoom
     }
     if (inputState.zoomOut) {
-      this.cam.targetZoom = Math.max(this.cam.targetZoom - 0.05, 0.5); // Min 0.5x zoom
+      this.cam.targetZoom = Math.max(this.cam.targetZoom - 0.1, 0.5); // Min 0.5x zoom
     }
 
     // Smooth zoom transition
@@ -288,6 +288,10 @@ export class Game {
     this.updateEnemies(deltaTime);
     this.updateSoma(deltaTime);
     this.updateFloatingTexts(deltaTime);
+
+    // Sync debug state with player
+    this.player.showOutline = debug.display.playerOutline;
+
     this.player.update(
       deltaTime,
       this.inputManager.inputState,

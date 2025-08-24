@@ -10,7 +10,8 @@ export class DebugSystem {
     public display = {
         bounds: false,      // Show hitboxes, weapon ranges, pickup radius
         grid: true,        // Show coordinate grid
-        playerBreathe: true // Enable player breathing animation
+        playerBreathe: true, // Enable player breathing animation
+        playerOutline: true // Show player outline
     };
 
     constructor() {
@@ -59,6 +60,12 @@ export class DebugSystem {
                 const checkbox = document.getElementById('playerBreathe') as HTMLInputElement;
                 if (checkbox) checkbox.checked = this.display.playerBreathe;
                 // console.log('Debug playerBreathe toggled:', this.display.playerBreathe);
+            }
+            if (e.code === 'KeyO') {
+                this.display.playerOutline = !this.display.playerOutline;
+                const checkbox = document.getElementById('playerOutline') as HTMLInputElement;
+                if (checkbox) checkbox.checked = this.display.playerOutline;
+                // console.log('Debug playerOutline toggled:', this.display.playerOutline);
             }
             if (e.code === 'Digit1') {
                 if (this.onAddXP) {
@@ -171,6 +178,33 @@ export class DebugSystem {
         playerBreatheLabel.appendChild(playerBreatheCheckbox);
         playerBreatheLabel.appendChild(playerBreatheText);
         debugPanel.appendChild(playerBreatheLabel);
+
+        // Create playerOutline checkbox
+        const playerOutlineLabel = document.createElement('label');
+        playerOutlineLabel.style.cssText = `
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+            margin-top: 4px;
+        `;
+
+        const playerOutlineCheckbox = document.createElement('input');
+        playerOutlineCheckbox.type = 'checkbox';
+        playerOutlineCheckbox.id = 'playerOutline';
+        playerOutlineCheckbox.checked = this.display.playerOutline;
+        
+        // Update debug state when checkbox changes
+        playerOutlineCheckbox.addEventListener('change', (e) => {
+            this.display.playerOutline = (e.target as HTMLInputElement).checked;
+            console.log('Debug display.playerOutline:', this.display.playerOutline);
+        });
+
+        const playerOutlineText = document.createTextNode('Player Outline');
+        
+        playerOutlineLabel.appendChild(playerOutlineCheckbox);
+        playerOutlineLabel.appendChild(playerOutlineText);
+        debugPanel.appendChild(playerOutlineLabel);
 
         // Create zoom indicator
         const zoomIndicator = document.createElement('div');
