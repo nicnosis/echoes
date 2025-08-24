@@ -67,6 +67,7 @@ export class Player {
     // Track movement state for breathing animation
     private wasMoving: boolean = false
 
+
     constructor(x: number, y: number) {
         this.x = x
         this.y = y
@@ -266,6 +267,7 @@ export class Player {
             ctx.scale(widthScale, heightScale)
             ctx.translate(-screen.x, -bottomY)
 
+
             // Render body parts in draw order (without individual breathing scaling)
             const sortedBodyParts = this.body
                 .map(bodyPart => ({
@@ -281,6 +283,7 @@ export class Player {
 
             ctx.restore()
         } else {
+
             // No breathing animation - render body parts normally
             const sortedBodyParts = this.body
                 .map(bodyPart => ({
@@ -468,6 +471,7 @@ export class Player {
             renderer.drawCircle(shadowX, shadowY, shadowWidth / 2, shadowColor)
         }
     }
+
 
     // Render mini HP bar above player's head
     private renderMiniHPBar(renderer: Renderer): void {
