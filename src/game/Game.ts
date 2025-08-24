@@ -497,8 +497,8 @@ export class Game {
       if (distanceSquared > attractionRadiusSquared) return;
 
       const distance = Math.sqrt(distanceSquared);
-      if (distance <= attractionRadius) {
-        // Attract Soma to player center
+      if (distance <= attractionRadius && !(soma as any).scattering) {
+        // Attract Soma to player center (only if not scattering)
         const attractionForce = 600;
         const dt = deltaTime / 1000;
         const dirX = dx / (distance || 1);

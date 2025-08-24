@@ -20,7 +20,7 @@ export class Soma {
     private startX: number
     private startY: number
     private scatterProgress: number = 0
-    private scatterDuration: number = 300 // 300ms
+    private scatterDuration: number = 150 // 150ms
     private scattering: boolean = false
 
     constructor(x: number, y: number, somaValue: number = 1, targetX?: number, targetY?: number) {
