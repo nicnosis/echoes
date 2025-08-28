@@ -99,7 +99,8 @@ export class Player {
 
     // Get specific body parts by ID
     const frogHead = BodyPartLoader.getBodyPart("froghead");
-    const torso = BodyPartLoader.getBodyPart("turtletorso");
+    const torso = BodyPartLoader.getBodyPart("beartorso");
+    // const torso = BodyPartLoader.getBodyPart("turtletorso");
 
     // Initialize body parts
     this.body = [];
@@ -339,7 +340,9 @@ export class Player {
     }
 
     // Render mini HP bar above head
-    this.renderMiniHPBar(renderer);
+    if (debug.display.showMiniHP) {
+      this.renderMiniHPBar(renderer);
+    }
 
     // Render projectiles
     this.projectiles.forEach((projectile) => {

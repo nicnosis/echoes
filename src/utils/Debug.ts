@@ -11,7 +11,8 @@ export class DebugSystem {
         bounds: false,      // Show hitboxes, weapon ranges, pickup radius
         grid: true,        // Show coordinate grid
         playerBreathe: true, // Enable player breathing animation
-        playerOutline: true // Show player outline
+        playerOutline: false, // Show player outline
+        showMiniHP: true   // Show player's personal HP bar above head
     };
 
     constructor() {
@@ -66,6 +67,12 @@ export class DebugSystem {
                 const checkbox = document.getElementById('playerOutline') as HTMLInputElement;
                 if (checkbox) checkbox.checked = this.display.playerOutline;
                 // console.log('Debug playerOutline toggled:', this.display.playerOutline);
+            }
+            if (e.code === 'KeyH') {
+                this.display.showMiniHP = !this.display.showMiniHP;
+                const checkbox = document.getElementById('showMiniHP') as HTMLInputElement;
+                if (checkbox) checkbox.checked = this.display.showMiniHP;
+                // console.log('Debug showMiniHP toggled:', this.display.showMiniHP);
             }
             if (e.code === 'Digit1') {
                 if (this.onAddXP) {
@@ -205,6 +212,33 @@ export class DebugSystem {
         playerOutlineLabel.appendChild(playerOutlineCheckbox);
         playerOutlineLabel.appendChild(playerOutlineText);
         debugPanel.appendChild(playerOutlineLabel);
+
+        // Create showMiniHP checkbox
+        const showMiniHPLabel = document.createElement('label');
+        showMiniHPLabel.style.cssText = `
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+            margin-top: 4px;
+        `;
+
+        const showMiniHPCheckbox = document.createElement('input');
+        showMiniHPCheckbox.type = 'checkbox';
+        showMiniHPCheckbox.id = 'showMiniHP';
+        showMiniHPCheckbox.checked = this.display.showMiniHP;
+        
+        // Update debug state when checkbox changes
+        showMiniHPCheckbox.addEventListener('change', (e) => {
+            this.display.showMiniHP = (e.target as HTMLInputElement).checked;
+            console.log('Debug display.showMiniHP:', this.display.showMiniHP);
+        });
+
+        const showMiniHPText = document.createTextNode('Show Mini-HP');
+        
+        showMiniHPLabel.appendChild(showMiniHPCheckbox);
+        showMiniHPLabel.appendChild(showMiniHPText);
+        debugPanel.appendChild(showMiniHPLabel);
 
         // Create zoom indicator
         const zoomIndicator = document.createElement('div');

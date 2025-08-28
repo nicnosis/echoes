@@ -6,6 +6,7 @@ export interface InputState {
   attack: boolean
   zoomIn: boolean
   zoomOut: boolean
+  zoomReset: boolean
 }
 
 export class InputManager {
@@ -17,7 +18,8 @@ export class InputManager {
     right: false,
     attack: false,
     zoomIn: false,
-    zoomOut: false
+    zoomOut: false,
+    zoomReset: false
   }
 
   constructor() {
@@ -64,6 +66,7 @@ export class InputManager {
     this.inputState.left = this.keys['KeyA'] || this.keys['ArrowLeft'] || false
     this.inputState.right = this.keys['KeyD'] || this.keys['ArrowRight'] || false
     this.inputState.attack = this.keys['Space'] || false
+    this.inputState.zoomReset = this.keys['Digit0'] || false
   }
 
   isKeyPressed(key: string): boolean {

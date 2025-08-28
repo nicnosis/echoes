@@ -173,6 +173,9 @@ export class Game {
     if (inputState.zoomOut) {
       this.cam.targetZoom = Math.max(this.cam.targetZoom - 0.1, 0.5); // Min 0.5x zoom
     }
+    if (inputState.zoomReset) {
+      this.cam.targetZoom = 1.0; // Reset to 1x zoom
+    }
 
     // Smooth zoom transition
     const zoomSpeed = 8; // How fast zoom changes
