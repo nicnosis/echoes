@@ -1,0 +1,6 @@
+id,displayName,type,imgFileName,scale,maxHP,hpRegen,lifeSteal,damage,red,green,blue,yellow,attackSpeed,critChance,range,armor,dodge,moveSpeed,interest,luck,effect,description
+shepherdhead,German Shepherd Head,head,,1.0,,,,,,,,,,,3,,,,2,,2,,Keen hunter instincts. Range +2, Crit +3, Luck +2
+grizzlytorso,Grizzly Bear Chest,torso,,1.2,12,,,,,,,,,,4,,-8,,,,,Massive protective bulk. Max HP +12, Armor +4, Speed -8%
+huskylegs,Husky Sled Legs,legs,,1.0,,1,,,,,,,,,,,6,18,,,Built for endurance running. Speed +18%, Dodge +6%, HP Regen +1
+bearclaws,Bear Claw Gauntlets,arms,,1.1,,,2,15,4,,,,,,,,-1,,,,,Red-scaling savage claws. Damage +15%, Red +4, Lifesteal +2, Range -1
+wolfears,Wolf Ears,accessory,,0.8,,,,,,,,,,5,1,,,,3,,Enhanced hearing and awareness. Luck +3, Crit +5, Range +1

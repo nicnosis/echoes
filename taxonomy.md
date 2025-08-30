@@ -6,5 +6,5 @@ Ectoa – amphibians, reptiles, and dragons
 Ceratar – horses, giraffes, rhinos, elephants
 Rodara – mice, squirrels, beavers, rabbits, platypus
 
-(Possibly) Crawlies – spiders, scorpions, beetles, ants, centipedes
+(Possibly) Crawlite – spiders, scorpions, beetles, ants, centipedes
 (Later content) Nautix – fish, crustaceans, marine life
